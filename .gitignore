@@ -42,3 +42,8 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Environment secrets (never commit; the Supabase secret key/DB password must never live in this repo)
+.env
+.env.local
+*.local.ts
