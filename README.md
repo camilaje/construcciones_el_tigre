@@ -1,59 +1,170 @@
-# ControlHerramientas
+# Control de Herramientas — Construcciones El Tigre
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.0.3.
+Reemplazo del archivo Excel/LibreOffice `Control_Herramientas_El_Tigre_v9.ods` que la empresa usa para
+controlar dónde está cada herramienta, en qué obra, a cargo de quién, y el historial de traslados entre obras.
 
-## Development server
+## Por qué existe este proyecto
 
-To start a local development server, run:
+El Excel tiene fallas de diseño reales, no solo de UX:
 
-```bash
-ng serve
+- La cantidad actual es `cantidadInicial - cantidadQueSale`, una resta **no acumulativa**: una segunda salida
+  en la misma fila rompe la fórmula a menos que se sume a mano.
+- Trasladar una herramienta entre obras son **dos ediciones manuales separadas** (restar en origen, crear o
+  sumar a mano en destino) — nunca atómico.
+- La hoja "Resumen_por_Obra" depende de columnas auxiliares con una fórmula rota (columna fija a la primera
+  obra del catálogo en vez de variar), así que no garantiza mostrar todas las combinaciones Obra×Herramienta.
+
+La app corrige los tres puntos: historial de movimientos ilimitado, traslados atómicos, y una vista agregada
+real en vez de fórmulas frágiles.
+
+## Stack
+
+- **Angular 22** (standalone components, signals, control flow `@if`/`@for`)
+- **Angular Material** (Material 3 / system tokens vía `mat.theme()` en `src/styles.scss`)
+- **Supabase** (Postgres + Auth + PostgREST) — proyecto real: `ngiegwgrljveitpwsinf`
+- **RxJS** para todo el flujo asíncrono (ver convenciones abajo)
+- Despliegue planeado: **Netlify** (gratuito)
+
+## Convenciones de código (obligatorias para todo código nuevo)
+
+1. **RxJS, no `async/await` ni `.then()` suelto.** Las llamadas que devuelven `Promise` (ej. métodos de
+   `supabase-js`) se envuelven con `from()` y se manejan con operadores RxJS / `.subscribe()`.
+2. **Inyección de dependencias con `inject()`**, nunca como parámetro de constructor. Aun así, la asignación
+   ocurre dentro del cuerpo del constructor (ver patrón abajo), no como inicializador de campo.
+3. **Todo campo de clase**: tipado explícito, modificador de acceso explícito (`private`/`protected`/`public`,
+   nunca implícito), e **inicializado en el constructor** (no como inicializador inline en la declaración).
+4. **Todo método**: tipos explícitos de parámetros y de retorno, y modificador de acceso explícito.
+   `protected` para miembros que solo usa el template; `private` para lo puramente interno.
+5. **SCSS en BEM** (`bloque__elemento--modificador`) como clases de estilo, agregadas en el template junto a
+   las clases propias de Angular Material.
+
+Patrón de referencia (ver `src/app/core/auth.service.ts` o `src/app/features/login/login.ts`):
+
+```ts
+export class Ejemplo {
+  private readonly miServicio: MiServicio;
+  private readonly estadoSignal: WritableSignal<string | null>;
+  protected readonly estado: Signal<string | null>;
+
+  constructor() {
+    this.miServicio = inject(MiServicio);
+    this.estadoSignal = signal<string | null>(null);
+    this.estado = this.estadoSignal.asReadonly();
+  }
+
+  protected hacerAlgo(valor: string): void {
+    from(this.miServicio.llamadaQueDevuelvePromise(valor)).subscribe((resultado: Resultado): void => {
+      this.estadoSignal.set(resultado.mensaje);
+    });
+  }
+}
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Identidad de marca
 
-## Code scaffolding
+- Logo en `public/logo.png` (emblema completo en negro sobre blanco, ya incluye el texto
+  "Construcciones El Tigre" — no lo dupliques en texto en pantallas donde se muestre el logo).
+- Colores: **negro `#000000` y blanco `#ffffff`** como principales; **terracota `#B0492E`** como acento
+  secundario únicamente (errores, hover), nunca como color dominante.
+- El login (`src/app/features/login/`) sobreescribe los tokens de sistema de Material 3 (`--mat-sys-primary`,
+  `--mat-sys-on-primary`, `--mat-sys-error`, `--mat-sys-surface`, `--mat-sys-on-surface`) dentro del selector
+  `.login`, en vez de pelear con `!important` contra el tema global.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Arquitectura
 
-```bash
-ng generate component component-name
+```
+src/app/
+  core/
+    supabase.service.ts   # cliente único de Supabase (createClient), inyectable
+    auth.service.ts        # estado de sesión (signals) + signIn/signOut (Observables)
+    auth.guard.ts           # CanActivateFn: redirige a /login si no hay sesión
+  features/
+    login/                  # pantalla de login (Material + marca)
+    inventario/             # "Inventario por Obra", lee la vista resumen_por_obra
+  app.routes.ts             # '/login' público, '/' protegida con authGuard
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+### Base de datos (Supabase)
+
+Migraciones en `supabase/migrations/`, seed en `supabase/seed.sql`. Para aplicar cambios nuevos, usar el
+SQL Editor del Dashboard (`supabase.com/dashboard/project/ngiegwgrljveitpwsinf/sql/new`) — el CLI vinculado
+(`supabase link`/`db push`) está bloqueado en esta máquina por el antivirus, ver sección de entorno abajo.
+
+**Tablas:**
+
+| Tabla | Qué guarda |
+|---|---|
+| `herramientas`, `obras`, `encargados` | Catálogos simples (CRUD) |
+| `inventario_obra` | Una fila por combinación Herramienta×Obra. `cantidad_inicial` se ingresa una sola vez; `cantidad_actual` se recalcula solo (trigger) |
+| `movimientos` | Historial de traslados obra-a-obra (siempre tiene origen y destino — la primera llegada de una herramienta es un insert directo a `inventario_obra`, nunca pasa por aquí) |
+
+**Función clave:** `transferir_herramienta(herramienta_id, obra_origen_id, obra_destino_id, cantidad, ...)` —
+valida stock en origen, crea el registro en destino si no existe, inserta el movimiento; un trigger recalcula
+`cantidad_actual` en ambos lados y genera el texto legible del movimiento.
+
+**Vista:** `resumen_por_obra` — reemplaza la hoja "Resumen_por_Obra" rota del Excel; agregación real, no
+fórmulas. Creada con `security_invoker = true` (si no, una vista quedaría con el owner `postgres`, que es
+superusuario, y se saltaría RLS de las tablas base sin que se note).
+
+**RLS:** todas las tablas son `for all to authenticated using (true)` — sin acceso anónimo por diseño. Esto
+es intencional: sin sesión, ninguna pantalla puede leer ni escribir, lo cual ya se usó como prueba de que el
+login funciona (ver Playwright más abajo).
+
+### Reglas de negocio que la app preserva
+
+1. Una herramienta puede existir repartida en varias obras a la vez, cada combinación con su propia cantidad.
+2. Un traslado es una sola operación atómica (resta en origen + suma-o-creación en destino).
+3. El historial completo de movimientos debe ser reconstruible por herramienta/obra/tiempo.
+4. La vista consolidada es una consulta agregada real, no una fórmula frágil.
+5. `cantidad_inicial` se ingresa una sola vez, al llegar la herramienta por primera vez a una obra.
+
+## Estado actual (qué está construido)
+
+- ✅ Esquema completo de base de datos, aplicado al proyecto Supabase real, con seed del catálogo legacy
+  (22 herramientas, 2 obras, 7 encargados).
+- ✅ Login (Supabase Auth, email+password) con marca aplicada.
+- ✅ Guard de rutas — sin sesión, todo redirige a `/login`.
+- ✅ Pantalla "Inventario por Obra" — lee `resumen_por_obra`, muestra estado vacío si no hay datos.
+- ✅ Logout.
+- ⬜ "Registrar herramienta nueva en obra" (alta inicial) — pendiente.
+- ⬜ "Registrar movimiento/traslado" — pendiente (la función `transferir_herramienta` ya existe en la BD).
+- ⬜ Historial de movimientos, CRUD de catálogos, detalle de un registro de inventario — pendientes.
+
+Hay un usuario de prueba en Supabase Auth: `garciamorenojuancamilo526@gmail.com` (contraseña no documentada
+aquí por seguridad — está en el historial de chat de configuración inicial).
+
+## Cómo levantar el proyecto en local
+
+**Requisito:** Node.js ≥ 22.22.3 (o ≥24.15.0 / ≥26.x). Si `node --version` muestra algo menor, instala una
+versión nueva desde [nodejs.org/en/download](https://nodejs.org/en/download) (instalador `.msi`, opciones
+por defecto) — `npm run start` falla con un mensaje claro si la versión es insuficiente.
 
 ```bash
-ng generate --help
+npm install
+npm run start   # ng serve, puerto 4200 por defecto -> http://localhost:4200/
 ```
 
-## Building
+### Nota de entorno: antivirus Avast intercepta HTTPS en esta máquina
 
-To build the project run:
+Avast hace TLS MITM scanning (re-firma certificados con su propia CA). Esto rompe herramientas de línea de
+comandos que no confían en el certificado inyectado:
 
-```bash
-ng build
-```
+- **Supabase CLI** (`supabase link`, `db push`, `projects list`): siguen bloqueados incluso con excepciones
+  de Avast agregadas para `api.supabase.com` y `*.supabase.co` — el binario Go no resuelve el problema vía
+  excepción de Avast. **Workaround:** usar el SQL Editor del Dashboard en vez del CLI para migraciones.
+- **Herramientas basadas en Node** (`npm install` de paquetes que descargan binarios, `npx playwright
+  install`, etc.): fallan con `UNABLE_TO_VERIFY_LEAF_SIGNATURE` aunque Avast tenga excepciones, porque Node
+  no usa el almacén de certificados de Windows por defecto. **Workaround:** exportar
+  `NODE_OPTIONS=--use-system-ca` antes de correr el comando (Node ≥22 lo soporta).
+- **`nvm-windows`**: no es fiable en este entorno (no imprime salida ni en `nvm version`, y `nvm install`
+  falla en silencio sin crear la carpeta de la versión). **Workaround usado:** descargar el zip oficial
+  `node-vX.Y.Z-win-x64.zip` de nodejs.org, extraerlo a una carpeta cualquiera, y anteponerla al `PATH` de la
+  sesión — no requiere admin ni toca la instalación de Node del sistema.
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Verificación end-to-end
 
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+El flujo login → guard → inventario → logout fue verificado con Playwright contra el dev server real
+(no solo compilación/build). Para repetir manualmente: crear un usuario en Supabase Auth (Dashboard →
+Authentication → Users → Add user, marcando "Auto Confirm User"), levantar `npm run start`, entrar a
+`http://localhost:4200/` (debe redirigir a `/login`), iniciar sesión, y confirmar que se ve la tabla de
+"Inventario por Obra" (vacía si no hay `inventario_obra` cargado) y que "Cerrar sesión" regresa a `/login`.
