@@ -133,9 +133,15 @@ export class Ejemplo {
   `:hover` que cae de nuevo en el token de sistema en vez del override puntual de color que sí se haya hecho.
 - El header (`shell.html`) es el mismo en todas las pantallas protegidas: logo + **título dinámico según la
   ruta activa** (`route.data['title']`, resuelto en `Shell.resolvePageTitle()` escuchando
-  `Router.events`/`NavigationEnd`) + nombre del usuario logueado (`user.user_metadata['full_name']`, con
-  fallback al correo) + botón de cerrar sesión. Logo y nombre se ocultan en viewports angostos
-  (`max-width: 600px`) para no chocar con el título truncado.
+  `Router.events`/`NavigationEnd`) + saludo "Hola, {nombre}" con el usuario logueado
+  (`user.user_metadata['full_name']`, con fallback al correo si no se ha configurado) + botón de cerrar
+  sesión. Logo y nombre se ocultan en viewports angostos (`max-width: 600px`) para no chocar con el título
+  truncado.
+- **Usuarios nuevos no tienen `full_name` por defecto** — Supabase Auth no tiene ese campo al crear el
+  usuario desde el Dashboard, así que el header les muestra el correo hasta que alguien con la contraseña
+  de esa cuenta corra `supabase.auth.updateUser({ data: { full_name: '...' } })` (un script de una sola
+  vez, no hay pantalla de "editar perfil" — decisión deliberada: el equipo es chico, no vale la pena la
+  pantalla todavía).
 
 ## Arquitectura
 
