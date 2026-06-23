@@ -19,22 +19,23 @@ import { Observable, combineLatest, from } from 'rxjs';
 
 import { SupabaseService } from '../../core/supabase.service';
 import { NotificationService } from '../../core/notification.service';
+import { SUPABASE_RPC_ENUMERATION, SUPABASE_TABLE_ENUMERATION } from '../../core/supabase-schema';
 
-interface CatalogItem {
+interface CatalogItemType {
   id: string;
   name: string;
 }
 
-interface CatalogItemResponse {
-  data: CatalogItem[] | null;
+interface CatalogItemResponseType {
+  data: CatalogItemType[] | null;
   error: PostgrestError | null;
 }
 
-interface TransferRpcResponse {
+interface TransferRpcResponseType {
   error: PostgrestError | null;
 }
 
-interface RegisterMovementFormControls {
+interface RegisterMovementFormControlsType {
   toolId: FormControl<string>;
   sourceSiteId: FormControl<string>;
   destinationSiteId: FormControl<string>;
@@ -62,17 +63,17 @@ interface RegisterMovementFormControls {
 export class RegisterMovement {
   private readonly supabaseService: SupabaseService;
   private readonly notificationService: NotificationService;
-  private readonly toolsSignal: WritableSignal<CatalogItem[]>;
-  private readonly sitesSignal: WritableSignal<CatalogItem[]>;
-  private readonly supervisorsSignal: WritableSignal<CatalogItem[]>;
+  private readonly toolsSignal: WritableSignal<CatalogItemType[]>;
+  private readonly sitesSignal: WritableSignal<CatalogItemType[]>;
+  private readonly supervisorsSignal: WritableSignal<CatalogItemType[]>;
   private readonly loadingCatalogsSignal: WritableSignal<boolean>;
   private readonly savingSignal: WritableSignal<boolean>;
   private readonly errorMessageSignal: WritableSignal<string | null>;
 
-  protected readonly form: FormGroup<RegisterMovementFormControls>;
-  protected readonly tools: Signal<CatalogItem[]>;
-  protected readonly sites: Signal<CatalogItem[]>;
-  protected readonly supervisors: Signal<CatalogItem[]>;
+  protected readonly form: FormGroup<RegisterMovementFormControlsType>;
+  protected readonly tools: Signal<CatalogItemType[]>;
+  protected readonly sites: Signal<CatalogItemType[]>;
+  protected readonly supervisors: Signal<CatalogItemType[]>;
   protected readonly loadingCatalogs: Signal<boolean>;
   protected readonly saving: Signal<boolean>;
   protected readonly errorMessage: Signal<string | null>;
@@ -80,9 +81,9 @@ export class RegisterMovement {
   constructor() {
     this.supabaseService = inject(SupabaseService);
     this.notificationService = inject(NotificationService);
-    this.toolsSignal = signal<CatalogItem[]>([]);
-    this.sitesSignal = signal<CatalogItem[]>([]);
-    this.supervisorsSignal = signal<CatalogItem[]>([]);
+    this.toolsSignal = signal<CatalogItemType[]>([]);
+    this.sitesSignal = signal<CatalogItemType[]>([]);
+    this.supervisorsSignal = signal<CatalogItemType[]>([]);
     this.loadingCatalogsSignal = signal<boolean>(true);
     this.savingSignal = signal<boolean>(false);
     this.errorMessageSignal = signal<string | null>(null);
@@ -94,7 +95,7 @@ export class RegisterMovement {
     this.saving = this.savingSignal.asReadonly();
     this.errorMessage = this.errorMessageSignal.asReadonly();
 
-    this.form = new FormGroup<RegisterMovementFormControls>(
+    this.form = new FormGroup<RegisterMovementFormControlsType>(
       {
         toolId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
         sourceSiteId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -129,7 +130,7 @@ export class RegisterMovement {
     this.errorMessageSignal.set(null);
 
     from(
-      this.supabaseService.client.rpc('transferir_herramienta', {
+      this.supabaseService.client.rpc(SUPABASE_RPC_ENUMERATION.TRANSFER_TOOL, {
         p_herramienta_id: toolId,
         p_obra_origen_id: sourceSiteId,
         p_obra_destino_id: destinationSiteId,
@@ -139,7 +140,7 @@ export class RegisterMovement {
         p_fecha: date,
         p_observaciones: notes || null
       })
-    ).subscribe((result: TransferRpcResponse): void => {
+    ).subscribe((result: TransferRpcResponseType): void => {
       this.savingSignal.set(false);
 
       if (result.error) {
@@ -172,18 +173,25 @@ export class RegisterMovement {
   }
 
   private loadCatalogs(): void {
-    const tools$: Observable<CatalogItemResponse> = from(
-      this.supabaseService.client.from('herramientas').select('id, name:nombre').order('nombre')
+    const tools$: Observable<CatalogItemResponseType> = from(
+      this.supabaseService.client.from(SUPABASE_TABLE_ENUMERATION.TOOLS).select('id, name:nombre').order('nombre')
     );
-    const sites$: Observable<CatalogItemResponse> = from(
-      this.supabaseService.client.from('obras').select('id, name:nombre').order('nombre')
+    const sites$: Observable<CatalogItemResponseType> = from(
+      this.supabaseService.client.from(SUPABASE_TABLE_ENUMERATION.SITES).select('id, name:nombre').order('nombre')
     );
-    const supervisors$: Observable<CatalogItemResponse> = from(
-      this.supabaseService.client.from('encargados').select('id, name:nombre').order('nombre')
+    const supervisors$: Observable<CatalogItemResponseType> = from(
+      this.supabaseService.client
+        .from(SUPABASE_TABLE_ENUMERATION.SUPERVISORS)
+        .select('id, name:nombre')
+        .order('nombre')
     );
 
     combineLatest([tools$, sites$, supervisors$]).subscribe(
-      ([tools, sites, supervisors]: [CatalogItemResponse, CatalogItemResponse, CatalogItemResponse]): void => {
+      ([tools, sites, supervisors]: [
+        CatalogItemResponseType,
+        CatalogItemResponseType,
+        CatalogItemResponseType
+      ]): void => {
         this.loadingCatalogsSignal.set(false);
 
         if (tools.error || sites.error || supervisors.error) {

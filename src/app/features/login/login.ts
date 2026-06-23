@@ -8,8 +8,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { AuthService } from '../../core/auth.service';
+import { APP_ROUTE_ENUMERATION } from '../../core/app-route';
 
-interface LoginFormControls {
+interface LoginFormControlsType {
   email: FormControl<string>;
   password: FormControl<string>;
 }
@@ -33,7 +34,7 @@ export class Login {
   private readonly loadingSignal: WritableSignal<boolean>;
   private readonly errorMessageSignal: WritableSignal<string | null>;
 
-  protected readonly form: FormGroup<LoginFormControls>;
+  protected readonly form: FormGroup<LoginFormControlsType>;
   protected readonly loading: Signal<boolean>;
   protected readonly errorMessage: Signal<string | null>;
 
@@ -45,7 +46,7 @@ export class Login {
     this.loading = this.loadingSignal.asReadonly();
     this.errorMessage = this.errorMessageSignal.asReadonly();
 
-    this.form = new FormGroup<LoginFormControls>({
+    this.form = new FormGroup<LoginFormControlsType>({
       email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
       password: new FormControl('', { nonNullable: true, validators: [Validators.required] })
     });
@@ -70,7 +71,7 @@ export class Login {
         return;
       }
 
-      this.router.navigateByUrl('/');
+      this.router.navigateByUrl(APP_ROUTE_ENUMERATION.HOME);
     });
   }
 }

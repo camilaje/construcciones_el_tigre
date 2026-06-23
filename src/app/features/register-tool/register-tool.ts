@@ -11,22 +11,23 @@ import { Observable, combineLatest, from } from 'rxjs';
 
 import { SupabaseService } from '../../core/supabase.service';
 import { NotificationService } from '../../core/notification.service';
+import { POSTGRES_ERROR_CODE_ENUMERATION, SUPABASE_TABLE_ENUMERATION } from '../../core/supabase-schema';
 
-interface CatalogItem {
+interface CatalogItemType {
   id: string;
   name: string;
 }
 
-interface CatalogItemResponse {
-  data: CatalogItem[] | null;
+interface CatalogItemResponseType {
+  data: CatalogItemType[] | null;
   error: PostgrestError | null;
 }
 
-interface InsertResponse {
+interface InsertResponseType {
   error: PostgrestError | null;
 }
 
-interface RegisterToolFormControls {
+interface RegisterToolFormControlsType {
   toolId: FormControl<string>;
   siteId: FormControl<string>;
   initialQuantity: FormControl<number>;
@@ -50,17 +51,17 @@ interface RegisterToolFormControls {
 export class RegisterTool {
   private readonly supabaseService: SupabaseService;
   private readonly notificationService: NotificationService;
-  private readonly toolsSignal: WritableSignal<CatalogItem[]>;
-  private readonly sitesSignal: WritableSignal<CatalogItem[]>;
-  private readonly supervisorsSignal: WritableSignal<CatalogItem[]>;
+  private readonly toolsSignal: WritableSignal<CatalogItemType[]>;
+  private readonly sitesSignal: WritableSignal<CatalogItemType[]>;
+  private readonly supervisorsSignal: WritableSignal<CatalogItemType[]>;
   private readonly loadingCatalogsSignal: WritableSignal<boolean>;
   private readonly savingSignal: WritableSignal<boolean>;
   private readonly errorMessageSignal: WritableSignal<string | null>;
 
-  protected readonly form: FormGroup<RegisterToolFormControls>;
-  protected readonly tools: Signal<CatalogItem[]>;
-  protected readonly sites: Signal<CatalogItem[]>;
-  protected readonly supervisors: Signal<CatalogItem[]>;
+  protected readonly form: FormGroup<RegisterToolFormControlsType>;
+  protected readonly tools: Signal<CatalogItemType[]>;
+  protected readonly sites: Signal<CatalogItemType[]>;
+  protected readonly supervisors: Signal<CatalogItemType[]>;
   protected readonly loadingCatalogs: Signal<boolean>;
   protected readonly saving: Signal<boolean>;
   protected readonly errorMessage: Signal<string | null>;
@@ -68,9 +69,9 @@ export class RegisterTool {
   constructor() {
     this.supabaseService = inject(SupabaseService);
     this.notificationService = inject(NotificationService);
-    this.toolsSignal = signal<CatalogItem[]>([]);
-    this.sitesSignal = signal<CatalogItem[]>([]);
-    this.supervisorsSignal = signal<CatalogItem[]>([]);
+    this.toolsSignal = signal<CatalogItemType[]>([]);
+    this.sitesSignal = signal<CatalogItemType[]>([]);
+    this.supervisorsSignal = signal<CatalogItemType[]>([]);
     this.loadingCatalogsSignal = signal<boolean>(true);
     this.savingSignal = signal<boolean>(false);
     this.errorMessageSignal = signal<string | null>(null);
@@ -82,7 +83,7 @@ export class RegisterTool {
     this.saving = this.savingSignal.asReadonly();
     this.errorMessage = this.errorMessageSignal.asReadonly();
 
-    this.form = new FormGroup<RegisterToolFormControls>({
+    this.form = new FormGroup<RegisterToolFormControlsType>({
       toolId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
       siteId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
       initialQuantity: new FormControl(1, {
@@ -109,18 +110,18 @@ export class RegisterTool {
     this.errorMessageSignal.set(null);
 
     from(
-      this.supabaseService.client.from('inventario_obra').insert({
+      this.supabaseService.client.from(SUPABASE_TABLE_ENUMERATION.INVENTORY).insert({
         herramienta_id: toolId,
         obra_id: siteId,
         cantidad_inicial: initialQuantity,
         encargado_id: supervisorId
       })
-    ).subscribe((result: InsertResponse): void => {
+    ).subscribe((result: InsertResponseType): void => {
       this.savingSignal.set(false);
 
       if (result.error) {
         this.errorMessageSignal.set(
-          result.error.code === '23505'
+          result.error.code === POSTGRES_ERROR_CODE_ENUMERATION.UNIQUE_VIOLATION
             ? 'Esta herramienta ya tiene inventario registrado en esta obra. Usa "Registrar movimiento" para trasladar cantidad hacia aquí.'
             : result.error.message
         );
@@ -133,18 +134,25 @@ export class RegisterTool {
   }
 
   private loadCatalogs(): void {
-    const tools$: Observable<CatalogItemResponse> = from(
-      this.supabaseService.client.from('herramientas').select('id, name:nombre').order('nombre')
+    const tools$: Observable<CatalogItemResponseType> = from(
+      this.supabaseService.client.from(SUPABASE_TABLE_ENUMERATION.TOOLS).select('id, name:nombre').order('nombre')
     );
-    const sites$: Observable<CatalogItemResponse> = from(
-      this.supabaseService.client.from('obras').select('id, name:nombre').order('nombre')
+    const sites$: Observable<CatalogItemResponseType> = from(
+      this.supabaseService.client.from(SUPABASE_TABLE_ENUMERATION.SITES).select('id, name:nombre').order('nombre')
     );
-    const supervisors$: Observable<CatalogItemResponse> = from(
-      this.supabaseService.client.from('encargados').select('id, name:nombre').order('nombre')
+    const supervisors$: Observable<CatalogItemResponseType> = from(
+      this.supabaseService.client
+        .from(SUPABASE_TABLE_ENUMERATION.SUPERVISORS)
+        .select('id, name:nombre')
+        .order('nombre')
     );
 
     combineLatest([tools$, sites$, supervisors$]).subscribe(
-      ([tools, sites, supervisors]: [CatalogItemResponse, CatalogItemResponse, CatalogItemResponse]): void => {
+      ([tools, sites, supervisors]: [
+        CatalogItemResponseType,
+        CatalogItemResponseType,
+        CatalogItemResponseType
+      ]): void => {
         this.loadingCatalogsSignal.set(false);
 
         if (tools.error || sites.error || supervisors.error) {

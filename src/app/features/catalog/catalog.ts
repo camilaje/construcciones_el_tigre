@@ -12,28 +12,29 @@ import { from } from 'rxjs';
 
 import { SupabaseService } from '../../core/supabase.service';
 import { NotificationService } from '../../core/notification.service';
+import { POSTGRES_ERROR_CODE_ENUMERATION, SUPABASE_TABLE_ENUMERATION } from '../../core/supabase-schema';
 
-interface CatalogRouteData {
-  table: string;
+interface CatalogRouteDataType {
+  table: SUPABASE_TABLE_ENUMERATION;
   label: string;
   singularLabel: string;
 }
 
-interface CatalogItem {
+interface CatalogItemType {
   id: string;
   name: string;
 }
 
-interface CatalogResponse {
-  data: CatalogItem[] | null;
+interface CatalogResponseType {
+  data: CatalogItemType[] | null;
   error: PostgrestError | null;
 }
 
-interface MutationResponse {
+interface MutationResponseType {
   error: PostgrestError | null;
 }
 
-interface NameFormControls {
+interface NameFormControlsType {
   name: FormControl<string>;
 }
 
@@ -54,8 +55,8 @@ interface NameFormControls {
 export class Catalog {
   private readonly supabaseService: SupabaseService;
   private readonly notificationService: NotificationService;
-  private readonly table: string;
-  private readonly itemsSignal: WritableSignal<CatalogItem[]>;
+  private readonly table: SUPABASE_TABLE_ENUMERATION;
+  private readonly itemsSignal: WritableSignal<CatalogItemType[]>;
   private readonly loadingSignal: WritableSignal<boolean>;
   private readonly errorMessageSignal: WritableSignal<string | null>;
   private readonly savingSignal: WritableSignal<boolean>;
@@ -63,24 +64,24 @@ export class Catalog {
 
   protected readonly label: string;
   protected readonly singularLabel: string;
-  protected readonly items: Signal<CatalogItem[]>;
+  protected readonly items: Signal<CatalogItemType[]>;
   protected readonly loading: Signal<boolean>;
   protected readonly errorMessage: Signal<string | null>;
   protected readonly saving: Signal<boolean>;
   protected readonly editingId: Signal<string | null>;
-  protected readonly createForm: FormGroup<NameFormControls>;
-  protected readonly editForm: FormGroup<NameFormControls>;
+  protected readonly createForm: FormGroup<NameFormControlsType>;
+  protected readonly editForm: FormGroup<NameFormControlsType>;
 
   constructor() {
     this.supabaseService = inject(SupabaseService);
     this.notificationService = inject(NotificationService);
 
-    const routeData: CatalogRouteData = inject(ActivatedRoute).snapshot.data as CatalogRouteData;
+    const routeData: CatalogRouteDataType = inject(ActivatedRoute).snapshot.data as CatalogRouteDataType;
     this.table = routeData.table;
     this.label = routeData.label;
     this.singularLabel = routeData.singularLabel;
 
-    this.itemsSignal = signal<CatalogItem[]>([]);
+    this.itemsSignal = signal<CatalogItemType[]>([]);
     this.loadingSignal = signal<boolean>(true);
     this.errorMessageSignal = signal<string | null>(null);
     this.savingSignal = signal<boolean>(false);
@@ -92,10 +93,10 @@ export class Catalog {
     this.saving = this.savingSignal.asReadonly();
     this.editingId = this.editingIdSignal.asReadonly();
 
-    this.createForm = new FormGroup<NameFormControls>({
+    this.createForm = new FormGroup<NameFormControlsType>({
       name: new FormControl('', { nonNullable: true, validators: [Validators.required] })
     });
-    this.editForm = new FormGroup<NameFormControls>({
+    this.editForm = new FormGroup<NameFormControlsType>({
       name: new FormControl('', { nonNullable: true, validators: [Validators.required] })
     });
 
@@ -112,7 +113,7 @@ export class Catalog {
     this.errorMessageSignal.set(null);
 
     from(this.supabaseService.client.from(this.table).insert({ nombre: name })).subscribe(
-      (result: MutationResponse): void => {
+      (result: MutationResponseType): void => {
         this.savingSignal.set(false);
 
         if (result.error) {
@@ -127,7 +128,7 @@ export class Catalog {
     );
   }
 
-  protected startEdit(item: CatalogItem): void {
+  protected startEdit(item: CatalogItemType): void {
     this.editingIdSignal.set(item.id);
     this.editForm.reset({ name: item.name });
   }
@@ -136,7 +137,7 @@ export class Catalog {
     this.editingIdSignal.set(null);
   }
 
-  protected saveEdit(item: CatalogItem): void {
+  protected saveEdit(item: CatalogItemType): void {
     if (this.editForm.invalid) {
       return;
     }
@@ -144,7 +145,7 @@ export class Catalog {
     const name: string = this.editForm.controls.name.value.trim();
 
     from(this.supabaseService.client.from(this.table).update({ nombre: name }).eq('id', item.id)).subscribe(
-      (result: MutationResponse): void => {
+      (result: MutationResponseType): void => {
         if (result.error) {
           this.errorMessageSignal.set(this.friendlyError(result.error, name));
           return;
@@ -157,13 +158,13 @@ export class Catalog {
     );
   }
 
-  protected remove(item: CatalogItem): void {
+  protected remove(item: CatalogItemType): void {
     if (!confirm(`¿Eliminar "${item.name}"? Esta acción no se puede deshacer.`)) {
       return;
     }
 
     from(this.supabaseService.client.from(this.table).delete().eq('id', item.id)).subscribe(
-      (result: MutationResponse): void => {
+      (result: MutationResponseType): void => {
         if (result.error) {
           this.errorMessageSignal.set(this.friendlyError(result.error, item.name));
           return;
@@ -176,11 +177,11 @@ export class Catalog {
   }
 
   private friendlyError(error: PostgrestError, name: string): string {
-    if (error.code === '23505') {
+    if (error.code === POSTGRES_ERROR_CODE_ENUMERATION.UNIQUE_VIOLATION) {
       return `Ya existe "${name}" en este catálogo.`;
     }
 
-    if (error.code === '23503') {
+    if (error.code === POSTGRES_ERROR_CODE_ENUMERATION.FOREIGN_KEY_VIOLATION) {
       return `No se puede eliminar "${name}": está en uso en el inventario.`;
     }
 
@@ -191,7 +192,7 @@ export class Catalog {
     this.loadingSignal.set(true);
 
     from(this.supabaseService.client.from(this.table).select('id, name:nombre').order('nombre')).subscribe(
-      (result: CatalogResponse): void => {
+      (result: CatalogResponseType): void => {
         this.loadingSignal.set(false);
 
         if (result.error) {

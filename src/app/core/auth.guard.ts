@@ -5,6 +5,7 @@ import { Session } from '@supabase/supabase-js';
 import { Observable, combineLatest, filter, map, take } from 'rxjs';
 
 import { AuthService } from './auth.service';
+import { APP_ROUTE_ENUMERATION } from './app-route';
 
 export const authGuard: CanActivateFn = (): Observable<boolean | UrlTree> => {
   const auth: AuthService = inject(AuthService);
@@ -14,7 +15,7 @@ export const authGuard: CanActivateFn = (): Observable<boolean | UrlTree> => {
     filter(([ready]: [boolean, Session | null]): boolean => ready),
     take(1),
     map(([, session]: [boolean, Session | null]): boolean | UrlTree =>
-      session ? true : router.createUrlTree(['/login'])
+      session ? true : router.createUrlTree([APP_ROUTE_ENUMERATION.LOGIN])
     )
   );
 };

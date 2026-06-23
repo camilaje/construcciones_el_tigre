@@ -9,8 +9,8 @@ export class AuthService {
   private readonly sessionSignal: WritableSignal<Session | null>;
   private readonly readySignal: WritableSignal<boolean>;
 
-  readonly session: Signal<Session | null>;
-  readonly ready: Signal<boolean>;
+  public readonly session: Signal<Session | null>;
+  public readonly ready: Signal<boolean>;
 
   constructor() {
     this.supabaseService = inject(SupabaseService);
@@ -33,13 +33,13 @@ export class AuthService {
     );
   }
 
-  signIn(email: string, password: string): Observable<string | null> {
+  public signIn(email: string, password: string): Observable<string | null> {
     return from(this.supabaseService.client.auth.signInWithPassword({ email, password })).pipe(
       map((result): string | null => result.error?.message ?? null)
     );
   }
 
-  signOut(): Observable<void> {
+  public signOut(): Observable<void> {
     return from(this.supabaseService.client.auth.signOut()).pipe(map((): void => undefined));
   }
 }

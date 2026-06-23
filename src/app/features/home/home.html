@@ -18,11 +18,11 @@
     </div>
 
     <div class="home__actions">
-      <a class="home__action" mat-flat-button color="primary" routerLink="/register-tool">
+      <a class="home__action" mat-flat-button color="primary" [routerLink]="appRoute.REGISTER_TOOL">
         Registrar herramienta nueva
       </a>
-      <a class="home__action" mat-stroked-button routerLink="/register-movement">Registrar movimiento</a>
-      <a class="home__action" mat-stroked-button routerLink="/inventory"> Ver inventario por obra </a>
+      <a class="home__action" mat-stroked-button [routerLink]="appRoute.REGISTER_MOVEMENT">Registrar movimiento</a>
+      <a class="home__action" mat-stroked-button [routerLink]="appRoute.INVENTORY"> Ver inventario por obra </a>
     </div>
   }
 </div>

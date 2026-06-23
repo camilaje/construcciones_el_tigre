@@ -5,8 +5,9 @@ import { PostgrestError } from '@supabase/supabase-js';
 import { from } from 'rxjs';
 
 import { SupabaseService } from '../../core/supabase.service';
+import { SUPABASE_VIEW_ENUMERATION } from '../../core/supabase-schema';
 
-interface SiteSummaryRow {
+interface SiteSummaryRowType {
   inventoryId: string;
   site: string;
   tool: string;
@@ -15,8 +16,8 @@ interface SiteSummaryRow {
   lastMovement: string | null;
 }
 
-interface SiteSummaryResponse {
-  data: SiteSummaryRow[] | null;
+interface SiteSummaryResponseType {
+  data: SiteSummaryRowType[] | null;
   error: PostgrestError | null;
 }
 
@@ -28,18 +29,18 @@ interface SiteSummaryResponse {
 })
 export class Inventory {
   private readonly supabaseService: SupabaseService;
-  private readonly rowsSignal: WritableSignal<SiteSummaryRow[]>;
+  private readonly rowsSignal: WritableSignal<SiteSummaryRowType[]>;
   private readonly loadingSignal: WritableSignal<boolean>;
   private readonly errorMessageSignal: WritableSignal<string | null>;
 
   protected readonly columns: string[];
-  protected readonly rows: Signal<SiteSummaryRow[]>;
+  protected readonly rows: Signal<SiteSummaryRowType[]>;
   protected readonly loading: Signal<boolean>;
   protected readonly errorMessage: Signal<string | null>;
 
   constructor() {
     this.supabaseService = inject(SupabaseService);
-    this.rowsSignal = signal<SiteSummaryRow[]>([]);
+    this.rowsSignal = signal<SiteSummaryRowType[]>([]);
     this.loadingSignal = signal<boolean>(true);
     this.errorMessageSignal = signal<string | null>(null);
 
@@ -50,11 +51,11 @@ export class Inventory {
 
     from(
       this.supabaseService.client
-        .from('resumen_por_obra')
+        .from(SUPABASE_VIEW_ENUMERATION.SITE_SUMMARY)
         .select(
           'inventoryId:inventario_obra_id, site:obra, tool:herramienta, currentQuantity:cantidad_actual, supervisor:encargado, lastMovement:ultimo_movimiento'
         )
-    ).subscribe((result: SiteSummaryResponse): void => {
+    ).subscribe((result: SiteSummaryResponseType): void => {
       this.loadingSignal.set(false);
 
       if (result.error) {

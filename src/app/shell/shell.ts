@@ -7,9 +7,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 
 import { AuthService } from '../core/auth.service';
+import { APP_ROUTE_ENUMERATION } from '../core/app-route';
 
-interface NavLink {
-  path: string;
+interface NavLinkType {
+  path: APP_ROUTE_ENUMERATION;
   label: string;
   icon: string;
 }
@@ -34,7 +35,7 @@ export class Shell {
   private readonly router: Router;
   private readonly sidenavOpenedSignal: WritableSignal<boolean>;
 
-  protected readonly navLinks: NavLink[];
+  protected readonly navLinks: NavLinkType[];
   protected readonly sidenavOpened: Signal<boolean>;
 
   constructor() {
@@ -44,13 +45,13 @@ export class Shell {
     this.sidenavOpened = this.sidenavOpenedSignal.asReadonly();
 
     this.navLinks = [
-      { path: '/', label: 'Inicio', icon: 'home' },
-      { path: '/inventory', label: 'Inventario por Obra', icon: 'inventory_2' },
-      { path: '/register-tool', label: 'Registrar herramienta nueva', icon: 'add_box' },
-      { path: '/register-movement', label: 'Registrar movimiento', icon: 'sync_alt' },
-      { path: '/catalogs/tools', label: 'Catálogo de herramientas', icon: 'construction' },
-      { path: '/catalogs/sites', label: 'Catálogo de obras', icon: 'location_city' },
-      { path: '/catalogs/supervisors', label: 'Catálogo de encargados', icon: 'badge' }
+      { path: APP_ROUTE_ENUMERATION.HOME, label: 'Inicio', icon: 'home' },
+      { path: APP_ROUTE_ENUMERATION.INVENTORY, label: 'Inventario por Obra', icon: 'inventory_2' },
+      { path: APP_ROUTE_ENUMERATION.REGISTER_TOOL, label: 'Registrar herramienta nueva', icon: 'add_box' },
+      { path: APP_ROUTE_ENUMERATION.REGISTER_MOVEMENT, label: 'Registrar movimiento', icon: 'sync_alt' },
+      { path: APP_ROUTE_ENUMERATION.CATALOG_TOOLS, label: 'Catálogo de herramientas', icon: 'construction' },
+      { path: APP_ROUTE_ENUMERATION.CATALOG_SITES, label: 'Catálogo de obras', icon: 'location_city' },
+      { path: APP_ROUTE_ENUMERATION.CATALOG_SUPERVISORS, label: 'Catálogo de encargados', icon: 'badge' }
     ];
   }
 
@@ -68,7 +69,7 @@ export class Shell {
 
   protected logout(): void {
     this.authService.signOut().subscribe((): void => {
-      this.router.navigateByUrl('/login');
+      this.router.navigateByUrl(APP_ROUTE_ENUMERATION.LOGIN);
     });
   }
 }

@@ -7,22 +7,24 @@ import { PostgrestError } from '@supabase/supabase-js';
 import { Observable, combineLatest, from } from 'rxjs';
 
 import { SupabaseService } from '../../core/supabase.service';
+import { APP_ROUTE_ENUMERATION } from '../../core/app-route';
+import { SUPABASE_TABLE_ENUMERATION, SUPABASE_VIEW_ENUMERATION } from '../../core/supabase-schema';
 
-interface CountResponse {
+interface CountResponseType {
   count: number | null;
   error: PostgrestError | null;
 }
 
-interface SiteInventoryRow {
+interface SiteInventoryRowType {
   currentQuantity: number;
 }
 
-interface SiteInventoryResponse {
-  data: SiteInventoryRow[] | null;
+interface SiteInventoryResponseType {
+  data: SiteInventoryRowType[] | null;
   error: PostgrestError | null;
 }
 
-interface DashboardStat {
+interface DashboardStatType {
   label: string;
   value: number;
 }
@@ -37,18 +39,20 @@ export class Home {
   private readonly supabaseService: SupabaseService;
   private readonly loadingSignal: WritableSignal<boolean>;
   private readonly errorMessageSignal: WritableSignal<string | null>;
-  private readonly statsSignal: WritableSignal<DashboardStat[]>;
+  private readonly statsSignal: WritableSignal<DashboardStatType[]>;
 
+  protected readonly appRoute: typeof APP_ROUTE_ENUMERATION;
   protected readonly loading: Signal<boolean>;
   protected readonly errorMessage: Signal<string | null>;
-  protected readonly stats: Signal<DashboardStat[]>;
+  protected readonly stats: Signal<DashboardStatType[]>;
 
   constructor() {
     this.supabaseService = inject(SupabaseService);
     this.loadingSignal = signal<boolean>(true);
     this.errorMessageSignal = signal<string | null>(null);
-    this.statsSignal = signal<DashboardStat[]>([]);
+    this.statsSignal = signal<DashboardStatType[]>([]);
 
+    this.appRoute = APP_ROUTE_ENUMERATION;
     this.loading = this.loadingSignal.asReadonly();
     this.errorMessage = this.errorMessageSignal.asReadonly();
     this.stats = this.statsSignal.asReadonly();
@@ -57,29 +61,35 @@ export class Home {
   }
 
   private loadStatistics(): void {
-    const tools$: Observable<CountResponse> = from(
-      this.supabaseService.client.from('herramientas').select('*', { count: 'exact', head: true })
+    const tools$: Observable<CountResponseType> = from(
+      this.supabaseService.client.from(SUPABASE_TABLE_ENUMERATION.TOOLS).select('*', { count: 'exact', head: true })
     );
-    const sites$: Observable<CountResponse> = from(
-      this.supabaseService.client.from('obras').select('*', { count: 'exact', head: true })
+    const sites$: Observable<CountResponseType> = from(
+      this.supabaseService.client.from(SUPABASE_TABLE_ENUMERATION.SITES).select('*', { count: 'exact', head: true })
     );
-    const supervisors$: Observable<CountResponse> = from(
-      this.supabaseService.client.from('encargados').select('*', { count: 'exact', head: true })
+    const supervisors$: Observable<CountResponseType> = from(
+      this.supabaseService.client
+        .from(SUPABASE_TABLE_ENUMERATION.SUPERVISORS)
+        .select('*', { count: 'exact', head: true })
     );
-    const movements$: Observable<CountResponse> = from(
-      this.supabaseService.client.from('movimientos').select('*', { count: 'exact', head: true })
+    const movements$: Observable<CountResponseType> = from(
+      this.supabaseService.client
+        .from(SUPABASE_TABLE_ENUMERATION.MOVEMENTS)
+        .select('*', { count: 'exact', head: true })
     );
-    const inventory$: Observable<SiteInventoryResponse> = from(
-      this.supabaseService.client.from('resumen_por_obra').select('currentQuantity:cantidad_actual')
+    const inventory$: Observable<SiteInventoryResponseType> = from(
+      this.supabaseService.client
+        .from(SUPABASE_VIEW_ENUMERATION.SITE_SUMMARY)
+        .select('currentQuantity:cantidad_actual')
     );
 
     combineLatest([tools$, sites$, supervisors$, movements$, inventory$]).subscribe(
       ([tools, sites, supervisors, movements, inventory]: [
-        CountResponse,
-        CountResponse,
-        CountResponse,
-        CountResponse,
-        SiteInventoryResponse
+        CountResponseType,
+        CountResponseType,
+        CountResponseType,
+        CountResponseType,
+        SiteInventoryResponseType
       ]): void => {
         this.loadingSignal.set(false);
 
@@ -88,9 +98,9 @@ export class Home {
           return;
         }
 
-        const rows: SiteInventoryRow[] = inventory.data ?? [];
+        const rows: SiteInventoryRowType[] = inventory.data ?? [];
         const totalUnits: number = rows.reduce(
-          (total: number, row: SiteInventoryRow): number => total + row.currentQuantity,
+          (total: number, row: SiteInventoryRowType): number => total + row.currentQuantity,
           0
         );
 

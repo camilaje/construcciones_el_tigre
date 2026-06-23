@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth.guard';
+import { APP_ROUTE_ENUMERATION } from './core/app-route';
+import { SUPABASE_TABLE_ENUMERATION } from './core/supabase-schema';
 import { Shell } from './shell/shell';
 import { Login } from './features/login/login';
 import { Home } from './features/home/home';
@@ -9,32 +11,32 @@ import { RegisterMovement } from './features/register-movement/register-movement
 import { Catalog } from './features/catalog/catalog';
 
 export const routes: Routes = [
-  { path: 'login', component: Login },
+  { path: APP_ROUTE_ENUMERATION.LOGIN.slice(1), component: Login },
   {
-    path: '',
+    path: APP_ROUTE_ENUMERATION.HOME.slice(1),
     component: Shell,
     canActivate: [authGuard],
     children: [
-      { path: '', component: Home },
-      { path: 'inventory', component: Inventory },
-      { path: 'register-tool', component: RegisterTool },
-      { path: 'register-movement', component: RegisterMovement },
+      { path: APP_ROUTE_ENUMERATION.HOME.slice(1), component: Home },
+      { path: APP_ROUTE_ENUMERATION.INVENTORY.slice(1), component: Inventory },
+      { path: APP_ROUTE_ENUMERATION.REGISTER_TOOL.slice(1), component: RegisterTool },
+      { path: APP_ROUTE_ENUMERATION.REGISTER_MOVEMENT.slice(1), component: RegisterMovement },
       {
-        path: 'catalogs/tools',
+        path: APP_ROUTE_ENUMERATION.CATALOG_TOOLS.slice(1),
         component: Catalog,
-        data: { table: 'herramientas', label: 'Herramientas', singularLabel: 'Herramienta' }
+        data: { table: SUPABASE_TABLE_ENUMERATION.TOOLS, label: 'Herramientas', singularLabel: 'Herramienta' }
       },
       {
-        path: 'catalogs/sites',
+        path: APP_ROUTE_ENUMERATION.CATALOG_SITES.slice(1),
         component: Catalog,
-        data: { table: 'obras', label: 'Obras', singularLabel: 'Obra' }
+        data: { table: SUPABASE_TABLE_ENUMERATION.SITES, label: 'Obras', singularLabel: 'Obra' }
       },
       {
-        path: 'catalogs/supervisors',
+        path: APP_ROUTE_ENUMERATION.CATALOG_SUPERVISORS.slice(1),
         component: Catalog,
-        data: { table: 'encargados', label: 'Encargados', singularLabel: 'Encargado' }
+        data: { table: SUPABASE_TABLE_ENUMERATION.SUPERVISORS, label: 'Encargados', singularLabel: 'Encargado' }
       }
     ]
   },
-  { path: '**', redirectTo: '' }
+  { path: '**', redirectTo: APP_ROUTE_ENUMERATION.HOME.slice(1) }
 ];

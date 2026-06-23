@@ -54,6 +54,19 @@ real en vez de fórmulas frágiles.
    `formDirective.resetForm(valores)` (con `#formDirective="ngForm"` en el `<form>` y pasándolo a tu método
    de submit) en vez de `this.form.reset(valores)` — `form.reset()` no limpia el flag `submitted` de
    Angular, así que los campos requeridos vacíos se ven en rojo aunque el usuario no los haya tocado.
+8. **Nada de strings/códigos quemados que se repiten entre archivos.** Nombres de tabla/vista/RPC de
+   Supabase y códigos de error de Postgres viven en `core/supabase-schema.ts`
+   (`SUPABASE_TABLE_ENUMERATION`, `SUPABASE_VIEW_ENUMERATION`, `SUPABASE_RPC_ENUMERATION`,
+   `POSTGRES_ERROR_CODE_ENUMERATION`); las rutas de la app viven en `core/app-route.ts`
+   (`APP_ROUTE_ENUMERATION`). Todo `.from(...)`, `.rpc(...)`, `path`/`data` de rutas, `routerLink`,
+   `navigateByUrl` y comparación de `error.code` pasa por uno de estos enums, nunca por un literal.
+9. **Convención de nombres para tipos vs. enums/constantes** (distinta de la del punto 3, que es sobre
+   modificadores de acceso):
+   - Interfaces/type alias: PascalCase con sufijo `Type` (`CatalogItemType`, `NavLinkType`).
+   - Enums y constantes exportadas sueltas: `UPPER_SNAKE_CASE` con sufijo `_ENUMERATION` (enums) o
+     `_CONSTANTS` (constantes sueltas/agrupadas) — ej. `SUPABASE_TABLE_ENUMERATION`,
+     `SUCCESS_TOAST_DURATION_MS_CONSTANTS`. Los **miembros** del enum también van en `UPPER_SNAKE_CASE`
+     (`SUPABASE_TABLE_ENUMERATION.TOOLS`, no `.Tools`).
 
 Patrón de referencia (ver `src/app/core/auth.service.ts` o `src/app/features/login/login.ts`):
 
