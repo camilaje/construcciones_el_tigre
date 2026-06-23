@@ -17,6 +17,16 @@
     width: 160px;
   }
 
+  &__filters {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  &__filter-field {
+    width: 220px;
+  }
+
   &__action {
     margin-right: 0.25rem;
   }

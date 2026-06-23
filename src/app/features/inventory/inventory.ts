@@ -1,4 +1,4 @@
-import { Component, Signal, WritableSignal, inject, signal } from '@angular/core';
+import { Component, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
@@ -6,6 +6,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { PostgrestError } from '@supabase/supabase-js';
 import { from } from 'rxjs';
 
@@ -56,7 +57,8 @@ interface MutationResponseType {
     MatProgressSpinnerModule,
     MatButtonModule,
     MatIconModule,
-    MatSelectModule
+    MatSelectModule,
+    MatFormFieldModule
   ],
   templateUrl: './inventory.html',
   styleUrl: './inventory.scss'
@@ -70,6 +72,8 @@ export class Inventory {
   private readonly errorMessageSignal: WritableSignal<string | null>;
   private readonly supervisorsSignal: WritableSignal<CatalogItemType[]>;
   private readonly editingIdSignal: WritableSignal<string | null>;
+  private readonly siteFilterSignal: WritableSignal<string | null>;
+  private readonly toolFilterSignal: WritableSignal<string | null>;
 
   protected readonly columns: string[];
   protected readonly rows: Signal<SiteSummaryRowType[]>;
@@ -78,6 +82,11 @@ export class Inventory {
   protected readonly supervisors: Signal<CatalogItemType[]>;
   protected readonly editingId: Signal<string | null>;
   protected readonly editSupervisorControl: FormControl<string | null>;
+  protected readonly siteFilter: Signal<string | null>;
+  protected readonly toolFilter: Signal<string | null>;
+  protected readonly siteOptions: Signal<string[]>;
+  protected readonly toolOptions: Signal<string[]>;
+  protected readonly filteredRows: Signal<SiteSummaryRowType[]>;
 
   constructor() {
     this.supabaseService = inject(SupabaseService);
@@ -88,6 +97,8 @@ export class Inventory {
     this.errorMessageSignal = signal<string | null>(null);
     this.supervisorsSignal = signal<CatalogItemType[]>([]);
     this.editingIdSignal = signal<string | null>(null);
+    this.siteFilterSignal = signal<string | null>(null);
+    this.toolFilterSignal = signal<string | null>(null);
 
     this.columns = ['site', 'tool', 'currentQuantity', 'supervisor', 'lastMovement', 'actions'];
     this.rows = this.rowsSignal.asReadonly();
@@ -96,9 +107,30 @@ export class Inventory {
     this.supervisors = this.supervisorsSignal.asReadonly();
     this.editingId = this.editingIdSignal.asReadonly();
     this.editSupervisorControl = new FormControl<string | null>(null);
+    this.siteFilter = this.siteFilterSignal.asReadonly();
+    this.toolFilter = this.toolFilterSignal.asReadonly();
+
+    this.siteOptions = computed((): string[] => this.uniqueSorted(this.rowsSignal().map((row): string => row.site)));
+    this.toolOptions = computed((): string[] => this.uniqueSorted(this.rowsSignal().map((row): string => row.tool)));
+    this.filteredRows = computed((): SiteSummaryRowType[] => {
+      const site: string | null = this.siteFilterSignal();
+      const tool: string | null = this.toolFilterSignal();
+
+      return this.rowsSignal().filter(
+        (row: SiteSummaryRowType): boolean => (!site || row.site === site) && (!tool || row.tool === tool)
+      );
+    });
 
     this.loadRows();
     this.loadSupervisors();
+  }
+
+  protected onSiteFilterChange(value: string | null): void {
+    this.siteFilterSignal.set(value);
+  }
+
+  protected onToolFilterChange(value: string | null): void {
+    this.toolFilterSignal.set(value);
   }
 
   protected startEditSupervisor(row: SiteSummaryRowType): void {
@@ -179,6 +211,10 @@ export class Inventory {
 
       this.rowsSignal.set(result.data ?? []);
     });
+  }
+
+  private uniqueSorted(values: string[]): string[] {
+    return Array.from(new Set(values)).sort((a: string, b: string): number => a.localeCompare(b));
   }
 
   private loadSupervisors(): void {

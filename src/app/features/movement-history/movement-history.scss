@@ -12,4 +12,15 @@
   &__error {
     color: var(--mat-sys-error);
   }
+
+  &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  &__filter-field {
+    width: 200px;
+  }
 }

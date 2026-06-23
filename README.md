@@ -213,8 +213,9 @@ login funciona (ver Playwright más abajo).
 - ✅ Barrels (`index.ts`) en `core/`, `shell/` y cada feature, con `features/index.ts` agregador.
 - ✅ Popups de confirmar/cancelar para borrar (Catálogos, Inventario) con SweetAlert2
   (`core/confirmation.service.ts`), en vez de `window.confirm()` nativo.
+- ✅ Filtros por Obra/Herramienta en "Inventario por Obra", y por Herramienta/Obra/rango de fecha en
+  "Historial de movimientos" — client-side, vía `computed()` sobre las filas ya cargadas.
 - ⬜ Despliegue en Netlify — config lista (`netlify.toml`), falta que conectes tu cuenta.
-- ⬜ Filtros en "Inventario por Obra" y "Historial de movimientos" — pendientes.
 
 Hay un usuario de prueba en Supabase Auth: `garciamorenojuancamilo526@gmail.com` (contraseña no documentada
 aquí por seguridad — está en el historial de chat de configuración inicial).
