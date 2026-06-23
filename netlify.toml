@@ -1,0 +1,11 @@
+[build]
+  command = "npm run build"
+  publish = "dist/control-herramientas/browser"
+
+[build.environment]
+  NODE_VERSION = "22.22.3"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
