@@ -1,4 +1,5 @@
-import { Component, Signal, WritableSignal, inject, signal } from '@angular/core';
+import { Component, DestroyRef, Signal, WritableSignal, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, FormGroupDirective, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -54,6 +55,7 @@ interface RegisterToolFormControlsType {
 export class RegisterTool {
   private readonly supabaseService: SupabaseService;
   private readonly notificationService: NotificationService;
+  private readonly destroyRef: DestroyRef;
   private readonly toolsSignal: WritableSignal<CatalogItemType[]>;
   private readonly sitesSignal: WritableSignal<CatalogItemType[]>;
   private readonly supervisorsSignal: WritableSignal<CatalogItemType[]>;
@@ -72,6 +74,7 @@ export class RegisterTool {
   constructor() {
     this.supabaseService = inject(SupabaseService);
     this.notificationService = inject(NotificationService);
+    this.destroyRef = inject(DestroyRef);
     this.toolsSignal = signal<CatalogItemType[]>([]);
     this.sitesSignal = signal<CatalogItemType[]>([]);
     this.supervisorsSignal = signal<CatalogItemType[]>([]);
@@ -119,21 +122,23 @@ export class RegisterTool {
         cantidad_inicial: initialQuantity,
         encargado_id: supervisorId
       })
-    ).subscribe((result: InsertResponseType): void => {
-      this.savingSignal.set(false);
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result: InsertResponseType): void => {
+        this.savingSignal.set(false);
 
-      if (result.error) {
-        this.errorMessageSignal.set(
-          result.error.code === POSTGRES_ERROR_CODE_ENUMERATION.UNIQUE_VIOLATION
-            ? 'Esta herramienta ya tiene inventario registrado en esta obra. Usa "Registrar movimiento" para trasladar cantidad hacia aquí.'
-            : result.error.message
-        );
-        return;
-      }
+        if (result.error) {
+          this.errorMessageSignal.set(
+            result.error.code === POSTGRES_ERROR_CODE_ENUMERATION.UNIQUE_VIOLATION
+              ? 'Esta herramienta ya tiene inventario registrado en esta obra. Usa "Registrar movimiento" para trasladar cantidad hacia aquí.'
+              : result.error.message
+          );
+          return;
+        }
 
-      this.notificationService.success('Herramienta registrada correctamente en la obra.');
-      formDirective.resetForm({ toolId: '', siteId: '', initialQuantity: 1, supervisorId: null });
-    });
+        this.notificationService.success('Herramienta registrada correctamente en la obra.');
+        formDirective.resetForm({ toolId: '', siteId: '', initialQuantity: 1, supervisorId: null });
+      });
   }
 
   private loadCatalogs(): void {
@@ -150,23 +155,25 @@ export class RegisterTool {
         .order('nombre')
     );
 
-    combineLatest([tools$, sites$, supervisors$]).subscribe(
-      ([tools, sites, supervisors]: [
-        CatalogItemResponseType,
-        CatalogItemResponseType,
-        CatalogItemResponseType
-      ]): void => {
-        this.loadingCatalogsSignal.set(false);
+    combineLatest([tools$, sites$, supervisors$])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(
+        ([tools, sites, supervisors]: [
+          CatalogItemResponseType,
+          CatalogItemResponseType,
+          CatalogItemResponseType
+        ]): void => {
+          this.loadingCatalogsSignal.set(false);
 
-        if (tools.error || sites.error || supervisors.error) {
-          this.errorMessageSignal.set('No se pudieron cargar los catálogos.');
-          return;
+          if (tools.error || sites.error || supervisors.error) {
+            this.errorMessageSignal.set('No se pudieron cargar los catálogos.');
+            return;
+          }
+
+          this.toolsSignal.set(tools.data ?? []);
+          this.sitesSignal.set(sites.data ?? []);
+          this.supervisorsSignal.set(supervisors.data ?? []);
         }
-
-        this.toolsSignal.set(tools.data ?? []);
-        this.sitesSignal.set(sites.data ?? []);
-        this.supervisorsSignal.set(supervisors.data ?? []);
-      }
-    );
+      );
   }
 }

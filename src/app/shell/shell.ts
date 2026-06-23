@@ -1,4 +1,5 @@
-import { Component, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   ActivatedRouteSnapshot,
   NavigationEnd,
@@ -42,6 +43,7 @@ const DEFAULT_PAGE_TITLE_CONSTANTS = 'Control de Herramientas';
 export class Shell {
   private readonly authService: AuthService;
   private readonly router: Router;
+  private readonly destroyRef: DestroyRef;
   private readonly sidenavOpenedSignal: WritableSignal<boolean>;
   private readonly pageTitleSignal: WritableSignal<string>;
 
@@ -53,6 +55,7 @@ export class Shell {
   constructor() {
     this.authService = inject(AuthService);
     this.router = inject(Router);
+    this.destroyRef = inject(DestroyRef);
     this.sidenavOpenedSignal = signal<boolean>(false);
     this.pageTitleSignal = signal<string>(this.resolvePageTitle());
 
@@ -80,11 +83,14 @@ export class Shell {
       { path: APP_ROUTE_ENUMERATION.CATALOG_SUPERVISORS, label: 'Catálogo de encargados', icon: 'badge' }
     ];
 
-    this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd)).subscribe(
-      (): void => {
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((): void => {
         this.pageTitleSignal.set(this.resolvePageTitle());
-      }
-    );
+      });
   }
 
   protected toggleSidenav(): void {
@@ -100,9 +106,12 @@ export class Shell {
   }
 
   protected logout(): void {
-    this.authService.signOut().subscribe((): void => {
-      this.router.navigateByUrl(APP_ROUTE_ENUMERATION.LOGIN);
-    });
+    this.authService
+      .signOut()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((): void => {
+        this.router.navigateByUrl(APP_ROUTE_ENUMERATION.LOGIN);
+      });
   }
 
   private resolvePageTitle(): string {

@@ -1,4 +1,5 @@
-import { Component, Signal, WritableSignal, inject, signal } from '@angular/core';
+import { Component, DestroyRef, Signal, WritableSignal, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   FormControl,
@@ -66,6 +67,7 @@ interface RegisterMovementFormControlsType {
 export class RegisterMovement {
   private readonly supabaseService: SupabaseService;
   private readonly notificationService: NotificationService;
+  private readonly destroyRef: DestroyRef;
   private readonly toolsSignal: WritableSignal<CatalogItemType[]>;
   private readonly sitesSignal: WritableSignal<CatalogItemType[]>;
   private readonly supervisorsSignal: WritableSignal<CatalogItemType[]>;
@@ -84,6 +86,7 @@ export class RegisterMovement {
   constructor() {
     this.supabaseService = inject(SupabaseService);
     this.notificationService = inject(NotificationService);
+    this.destroyRef = inject(DestroyRef);
     this.toolsSignal = signal<CatalogItemType[]>([]);
     this.sitesSignal = signal<CatalogItemType[]>([]);
     this.supervisorsSignal = signal<CatalogItemType[]>([]);
@@ -143,26 +146,28 @@ export class RegisterMovement {
         p_fecha: date,
         p_observaciones: notes || null
       })
-    ).subscribe((result: TransferRpcResponseType): void => {
-      this.savingSignal.set(false);
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result: TransferRpcResponseType): void => {
+        this.savingSignal.set(false);
 
-      if (result.error) {
-        this.errorMessageSignal.set(result.error.message);
-        return;
-      }
+        if (result.error) {
+          this.errorMessageSignal.set(result.error.message);
+          return;
+        }
 
-      this.notificationService.success('Traslado registrado correctamente.');
-      formDirective.resetForm({
-        toolId: '',
-        sourceSiteId: '',
-        destinationSiteId: '',
-        quantity: 1,
-        deliveredById: null,
-        receivedById: null,
-        date: this.today(),
-        notes: ''
+        this.notificationService.success('Traslado registrado correctamente.');
+        formDirective.resetForm({
+          toolId: '',
+          sourceSiteId: '',
+          destinationSiteId: '',
+          quantity: 1,
+          deliveredById: null,
+          receivedById: null,
+          date: this.today(),
+          notes: ''
+        });
       });
-    });
   }
 
   private validateDifferentSites(group: AbstractControl): ValidationErrors | null {
@@ -189,23 +194,25 @@ export class RegisterMovement {
         .order('nombre')
     );
 
-    combineLatest([tools$, sites$, supervisors$]).subscribe(
-      ([tools, sites, supervisors]: [
-        CatalogItemResponseType,
-        CatalogItemResponseType,
-        CatalogItemResponseType
-      ]): void => {
-        this.loadingCatalogsSignal.set(false);
+    combineLatest([tools$, sites$, supervisors$])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(
+        ([tools, sites, supervisors]: [
+          CatalogItemResponseType,
+          CatalogItemResponseType,
+          CatalogItemResponseType
+        ]): void => {
+          this.loadingCatalogsSignal.set(false);
 
-        if (tools.error || sites.error || supervisors.error) {
-          this.errorMessageSignal.set('No se pudieron cargar los catálogos.');
-          return;
+          if (tools.error || sites.error || supervisors.error) {
+            this.errorMessageSignal.set('No se pudieron cargar los catálogos.');
+            return;
+          }
+
+          this.toolsSignal.set(tools.data ?? []);
+          this.sitesSignal.set(sites.data ?? []);
+          this.supervisorsSignal.set(supervisors.data ?? []);
         }
-
-        this.toolsSignal.set(tools.data ?? []);
-        this.sitesSignal.set(sites.data ?? []);
-        this.supervisorsSignal.set(supervisors.data ?? []);
-      }
-    );
+      );
   }
 }

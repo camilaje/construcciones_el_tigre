@@ -1,4 +1,5 @@
-import { Component, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
@@ -8,7 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { PostgrestError } from '@supabase/supabase-js';
-import { from } from 'rxjs';
+import { Observable, filter, from, switchMap } from 'rxjs';
 
 import {
   APP_ROUTE_ENUMERATION,
@@ -67,6 +68,7 @@ export class Inventory {
   private readonly supabaseService: SupabaseService;
   private readonly notificationService: NotificationService;
   private readonly confirmationService: ConfirmationService;
+  private readonly destroyRef: DestroyRef;
   private readonly rowsSignal: WritableSignal<SiteSummaryRowType[]>;
   private readonly loadingSignal: WritableSignal<boolean>;
   private readonly errorMessageSignal: WritableSignal<string | null>;
@@ -92,6 +94,7 @@ export class Inventory {
     this.supabaseService = inject(SupabaseService);
     this.notificationService = inject(NotificationService);
     this.confirmationService = inject(ConfirmationService);
+    this.destroyRef = inject(DestroyRef);
     this.rowsSignal = signal<SiteSummaryRowType[]>([]);
     this.loadingSignal = signal<boolean>(true);
     this.errorMessageSignal = signal<string | null>(null);
@@ -154,41 +157,44 @@ export class Inventory {
         .from(SUPABASE_TABLE_ENUMERATION.INVENTORY)
         .update({ encargado_id: supervisorId })
         .eq('id', row.inventoryId)
-    ).subscribe((result: MutationResponseType): void => {
-      if (result.error) {
-        this.errorMessageSignal.set(result.error.message);
-        return;
-      }
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result: MutationResponseType): void => {
+        if (result.error) {
+          this.errorMessageSignal.set(result.error.message);
+          return;
+        }
 
-      this.editingIdSignal.set(null);
-      this.notificationService.success('Encargado actualizado correctamente.');
-      this.loadRows();
-    });
+        this.editingIdSignal.set(null);
+        this.notificationService.success('Encargado actualizado correctamente.');
+        this.loadRows();
+      });
   }
 
   protected remove(row: SiteSummaryRowType): void {
     this.confirmationService
       .confirm(`¿Eliminar el registro de "${row.tool}" en "${row.site}"? Esta acción no se puede deshacer.`)
-      .subscribe((confirmed: boolean): void => {
-        if (!confirmed) {
+      .pipe(
+        filter((confirmed: boolean): boolean => confirmed),
+        switchMap((): Observable<MutationResponseType> =>
+          from(
+            this.supabaseService.client.from(SUPABASE_TABLE_ENUMERATION.INVENTORY).delete().eq('id', row.inventoryId)
+          )
+        ),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((result: MutationResponseType): void => {
+        if (result.error) {
+          this.errorMessageSignal.set(
+            result.error.code === POSTGRES_ERROR_CODE_ENUMERATION.FOREIGN_KEY_VIOLATION
+              ? `No se puede eliminar "${row.tool}" en "${row.site}": tiene movimientos en el historial.`
+              : result.error.message
+          );
           return;
         }
 
-        from(
-          this.supabaseService.client.from(SUPABASE_TABLE_ENUMERATION.INVENTORY).delete().eq('id', row.inventoryId)
-        ).subscribe((result: MutationResponseType): void => {
-          if (result.error) {
-            this.errorMessageSignal.set(
-              result.error.code === POSTGRES_ERROR_CODE_ENUMERATION.FOREIGN_KEY_VIOLATION
-                ? `No se puede eliminar "${row.tool}" en "${row.site}": tiene movimientos en el historial.`
-                : result.error.message
-            );
-            return;
-          }
-
-          this.notificationService.success('Registro eliminado correctamente.');
-          this.loadRows();
-        });
+        this.notificationService.success('Registro eliminado correctamente.');
+        this.loadRows();
       });
   }
 
@@ -201,16 +207,18 @@ export class Inventory {
         .select(
           'inventoryId:inventario_obra_id, site:obra, tool:herramienta, currentQuantity:cantidad_actual, supervisor:encargado, lastMovement:ultimo_movimiento'
         )
-    ).subscribe((result: SiteSummaryResponseType): void => {
-      this.loadingSignal.set(false);
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result: SiteSummaryResponseType): void => {
+        this.loadingSignal.set(false);
 
-      if (result.error) {
-        this.errorMessageSignal.set(result.error.message);
-        return;
-      }
+        if (result.error) {
+          this.errorMessageSignal.set(result.error.message);
+          return;
+        }
 
-      this.rowsSignal.set(result.data ?? []);
-    });
+        this.rowsSignal.set(result.data ?? []);
+      });
   }
 
   private uniqueSorted(values: string[]): string[] {
@@ -223,8 +231,10 @@ export class Inventory {
         .from(SUPABASE_TABLE_ENUMERATION.SUPERVISORS)
         .select('id, name:nombre')
         .order('nombre')
-    ).subscribe((result: CatalogItemResponseType): void => {
-      this.supervisorsSignal.set(result.data ?? []);
-    });
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result: CatalogItemResponseType): void => {
+        this.supervisorsSignal.set(result.data ?? []);
+      });
   }
 }

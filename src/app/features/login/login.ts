@@ -1,4 +1,5 @@
-import { Component, Signal, WritableSignal, inject, signal } from '@angular/core';
+import { Component, DestroyRef, Signal, WritableSignal, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -30,6 +31,7 @@ interface LoginFormControlsType {
 export class Login {
   private readonly authService: AuthService;
   private readonly router: Router;
+  private readonly destroyRef: DestroyRef;
   private readonly loadingSignal: WritableSignal<boolean>;
   private readonly errorMessageSignal: WritableSignal<string | null>;
 
@@ -40,6 +42,7 @@ export class Login {
   constructor() {
     this.authService = inject(AuthService);
     this.router = inject(Router);
+    this.destroyRef = inject(DestroyRef);
     this.loadingSignal = signal<boolean>(false);
     this.errorMessageSignal = signal<string | null>(null);
     this.loading = this.loadingSignal.asReadonly();
@@ -62,15 +65,18 @@ export class Login {
     this.loadingSignal.set(true);
     this.errorMessageSignal.set(null);
 
-    this.authService.signIn(email, password).subscribe((error: string | null): void => {
-      this.loadingSignal.set(false);
+    this.authService
+      .signIn(email, password)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((error: string | null): void => {
+        this.loadingSignal.set(false);
 
-      if (error) {
-        this.errorMessageSignal.set('Correo o contraseña incorrectos.');
-        return;
-      }
+        if (error) {
+          this.errorMessageSignal.set('Correo o contraseña incorrectos.');
+          return;
+        }
 
-      this.router.navigateByUrl(APP_ROUTE_ENUMERATION.HOME);
-    });
+        this.router.navigateByUrl(APP_ROUTE_ENUMERATION.HOME);
+      });
   }
 }

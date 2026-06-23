@@ -1,4 +1,5 @@
-import { Component, Signal, WritableSignal, inject, signal } from '@angular/core';
+import { Component, DestroyRef, Signal, WritableSignal, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { FormControl, FormGroup, FormGroupDirective, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,7 +9,7 @@ import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PostgrestError } from '@supabase/supabase-js';
-import { from } from 'rxjs';
+import { Observable, filter, from, switchMap } from 'rxjs';
 
 import {
   ConfirmationService,
@@ -60,6 +61,7 @@ export class Catalog {
   private readonly supabaseService: SupabaseService;
   private readonly notificationService: NotificationService;
   private readonly confirmationService: ConfirmationService;
+  private readonly destroyRef: DestroyRef;
   private readonly table: SUPABASE_TABLE_ENUMERATION;
   private readonly itemsSignal: WritableSignal<CatalogItemType[]>;
   private readonly loadingSignal: WritableSignal<boolean>;
@@ -81,6 +83,7 @@ export class Catalog {
     this.supabaseService = inject(SupabaseService);
     this.notificationService = inject(NotificationService);
     this.confirmationService = inject(ConfirmationService);
+    this.destroyRef = inject(DestroyRef);
 
     const routeData: CatalogRouteDataType = inject(ActivatedRoute).snapshot.data as CatalogRouteDataType;
     this.table = routeData.table;
@@ -118,8 +121,9 @@ export class Catalog {
     this.savingSignal.set(true);
     this.errorMessageSignal.set(null);
 
-    from(this.supabaseService.client.from(this.table).insert({ nombre: name })).subscribe(
-      (result: MutationResponseType): void => {
+    from(this.supabaseService.client.from(this.table).insert({ nombre: name }))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result: MutationResponseType): void => {
         this.savingSignal.set(false);
 
         if (result.error) {
@@ -130,8 +134,7 @@ export class Catalog {
         this.notificationService.success(`Se agregó "${name}" correctamente.`);
         formDirective.resetForm({ name: '' });
         this.loadItems();
-      }
-    );
+      });
   }
 
   protected startEdit(item: CatalogItemType): void {
@@ -150,8 +153,9 @@ export class Catalog {
 
     const name: string = this.editForm.controls.name.value.trim();
 
-    from(this.supabaseService.client.from(this.table).update({ nombre: name }).eq('id', item.id)).subscribe(
-      (result: MutationResponseType): void => {
+    from(this.supabaseService.client.from(this.table).update({ nombre: name }).eq('id', item.id))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result: MutationResponseType): void => {
         if (result.error) {
           this.errorMessageSignal.set(this.friendlyError(result.error, name));
           return;
@@ -160,29 +164,27 @@ export class Catalog {
         this.editingIdSignal.set(null);
         this.notificationService.success(`Se actualizó a "${name}" correctamente.`);
         this.loadItems();
-      }
-    );
+      });
   }
 
   protected remove(item: CatalogItemType): void {
     this.confirmationService
       .confirm(`¿Eliminar "${item.name}"? Esta acción no se puede deshacer.`)
-      .subscribe((confirmed: boolean): void => {
-        if (!confirmed) {
+      .pipe(
+        filter((confirmed: boolean): boolean => confirmed),
+        switchMap((): Observable<MutationResponseType> =>
+          from(this.supabaseService.client.from(this.table).delete().eq('id', item.id))
+        ),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((result: MutationResponseType): void => {
+        if (result.error) {
+          this.errorMessageSignal.set(this.friendlyError(result.error, item.name));
           return;
         }
 
-        from(this.supabaseService.client.from(this.table).delete().eq('id', item.id)).subscribe(
-          (result: MutationResponseType): void => {
-            if (result.error) {
-              this.errorMessageSignal.set(this.friendlyError(result.error, item.name));
-              return;
-            }
-
-            this.notificationService.success(`Se eliminó "${item.name}" correctamente.`);
-            this.loadItems();
-          }
-        );
+        this.notificationService.success(`Se eliminó "${item.name}" correctamente.`);
+        this.loadItems();
       });
   }
 
@@ -201,8 +203,9 @@ export class Catalog {
   private loadItems(): void {
     this.loadingSignal.set(true);
 
-    from(this.supabaseService.client.from(this.table).select('id, name:nombre').order('nombre')).subscribe(
-      (result: CatalogResponseType): void => {
+    from(this.supabaseService.client.from(this.table).select('id, name:nombre').order('nombre'))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result: CatalogResponseType): void => {
         this.loadingSignal.set(false);
 
         if (result.error) {
@@ -211,7 +214,6 @@ export class Catalog {
         }
 
         this.itemsSignal.set(result.data ?? []);
-      }
-    );
+      });
   }
 }

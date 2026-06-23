@@ -19,6 +19,10 @@ export class AuthService {
     this.session = this.sessionSignal.asReadonly();
     this.ready = this.readySignal.asReadonly();
 
+    // No takeUntilDestroyed here: this is a root singleton (providedIn: 'root'), so its
+    // DestroyRef never fires during a normal app session — these subscriptions are meant
+    // to live for as long as the app does. onAuthStateChange below also isn't an RxJS
+    // Observable; it's the Supabase SDK's own callback API with its own unsubscribe.
     from(this.supabaseService.client.auth.getSession()).subscribe(
       (result: { data: { session: Session | null } }): void => {
         this.sessionSignal.set(result.data.session);

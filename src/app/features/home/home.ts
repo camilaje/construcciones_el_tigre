@@ -1,4 +1,5 @@
-import { Component, Signal, WritableSignal, inject, signal } from '@angular/core';
+import { Component, DestroyRef, Signal, WritableSignal, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -35,6 +36,7 @@ interface DashboardStatType {
 })
 export class Home {
   private readonly supabaseService: SupabaseService;
+  private readonly destroyRef: DestroyRef;
   private readonly loadingSignal: WritableSignal<boolean>;
   private readonly errorMessageSignal: WritableSignal<string | null>;
   private readonly statsSignal: WritableSignal<DashboardStatType[]>;
@@ -46,6 +48,7 @@ export class Home {
 
   constructor() {
     this.supabaseService = inject(SupabaseService);
+    this.destroyRef = inject(DestroyRef);
     this.loadingSignal = signal<boolean>(true);
     this.errorMessageSignal = signal<string | null>(null);
     this.statsSignal = signal<DashboardStatType[]>([]);
@@ -81,36 +84,38 @@ export class Home {
         .select('currentQuantity:cantidad_actual')
     );
 
-    combineLatest([tools$, sites$, supervisors$, movements$, inventory$]).subscribe(
-      ([tools, sites, supervisors, movements, inventory]: [
-        CountResponseType,
-        CountResponseType,
-        CountResponseType,
-        CountResponseType,
-        SiteInventoryResponseType
-      ]): void => {
-        this.loadingSignal.set(false);
+    combineLatest([tools$, sites$, supervisors$, movements$, inventory$])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(
+        ([tools, sites, supervisors, movements, inventory]: [
+          CountResponseType,
+          CountResponseType,
+          CountResponseType,
+          CountResponseType,
+          SiteInventoryResponseType
+        ]): void => {
+          this.loadingSignal.set(false);
 
-        if (tools.error || sites.error || supervisors.error || movements.error || inventory.error) {
-          this.errorMessageSignal.set('No se pudieron cargar las estadísticas.');
-          return;
+          if (tools.error || sites.error || supervisors.error || movements.error || inventory.error) {
+            this.errorMessageSignal.set('No se pudieron cargar las estadísticas.');
+            return;
+          }
+
+          const rows: SiteInventoryRowType[] = inventory.data ?? [];
+          const totalUnits: number = rows.reduce(
+            (total: number, row: SiteInventoryRowType): number => total + row.currentQuantity,
+            0
+          );
+
+          this.statsSignal.set([
+            { label: 'Herramientas en catálogo', value: tools.count ?? 0 },
+            { label: 'Obras activas', value: sites.count ?? 0 },
+            { label: 'Encargados', value: supervisors.count ?? 0 },
+            { label: 'Combinaciones obra + herramienta con stock', value: rows.length },
+            { label: 'Unidades totales en inventario', value: totalUnits },
+            { label: 'Movimientos registrados', value: movements.count ?? 0 }
+          ]);
         }
-
-        const rows: SiteInventoryRowType[] = inventory.data ?? [];
-        const totalUnits: number = rows.reduce(
-          (total: number, row: SiteInventoryRowType): number => total + row.currentQuantity,
-          0
-        );
-
-        this.statsSignal.set([
-          { label: 'Herramientas en catálogo', value: tools.count ?? 0 },
-          { label: 'Obras activas', value: sites.count ?? 0 },
-          { label: 'Encargados', value: supervisors.count ?? 0 },
-          { label: 'Combinaciones obra + herramienta con stock', value: rows.length },
-          { label: 'Unidades totales en inventario', value: totalUnits },
-          { label: 'Movimientos registrados', value: movements.count ?? 0 }
-        ]);
-      }
-    );
+      );
   }
 }

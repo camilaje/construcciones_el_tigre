@@ -28,7 +28,15 @@ real en vez de fórmulas frágiles.
 ## Convenciones de código (obligatorias para todo código nuevo)
 
 1. **RxJS, no `async/await` ni `.then()` suelto.** Las llamadas que devuelven `Promise` (ej. métodos de
-   `supabase-js`) se envuelven con `from()` y se manejan con operadores RxJS / `.subscribe()`.
+   `supabase-js`) se envuelven con `from()` y se manejan con operadores RxJS / `.subscribe()`. Toda
+   suscripción en un componente se cierra con `takeUntilDestroyed(this.destroyRef)` (`DestroyRef` inyectado
+   en el constructor, igual que cualquier otra dependencia) para evitar fugas de memoria. **Nunca
+   suscripciones anidadas** (un `.subscribe()` dentro de otro `.subscribe()`) — cuando el segundo paso
+   depende del resultado del primero, se aplana con `switchMap` (ver `inventory-detail.ts` para el caso de
+   dos pasos encadenados, o `catalog.ts`/`inventory.ts` `remove()` para confirmar-y-luego-borrar con
+   `filter` + `switchMap`). Excepción documentada: `core/services/auth.service.ts` no usa
+   `takeUntilDestroyed` — es un singleton `providedIn: 'root'` cuyo `DestroyRef` no se dispara en una
+   sesión normal de la app, y sus suscripciones están pensadas para vivir mientras viva la app.
 2. **Inyección de dependencias con `inject()`**, nunca como parámetro de constructor. Aun así, la asignación
    ocurre dentro del cuerpo del constructor (ver patrón abajo), no como inicializador de campo.
 3. **Todo campo de clase**: tipado explícito, modificador de acceso explícito (`private`/`protected`/`public`,

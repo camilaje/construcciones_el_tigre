@@ -1,4 +1,5 @@
-import { Component, Signal, WritableSignal, inject, signal } from '@angular/core';
+import { Component, DestroyRef, Signal, WritableSignal, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, ParamMap, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
@@ -6,7 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PostgrestError } from '@supabase/supabase-js';
-import { from } from 'rxjs';
+import { Observable, from, map, of, switchMap, tap } from 'rxjs';
 
 import { APP_ROUTE_ENUMERATION, SUPABASE_VIEW_ENUMERATION, SupabaseService } from '../../core';
 
@@ -39,6 +40,12 @@ interface DetailMovementResponseType {
   error: PostgrestError | null;
 }
 
+interface DetailLoadResultType {
+  header: DetailHeaderType | null;
+  movements: DetailMovementRowType[];
+  error: string | null;
+}
+
 @Component({
   selector: 'app-inventory-detail',
   imports: [RouterLink, MatCardModule, MatTableModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
@@ -47,6 +54,7 @@ interface DetailMovementResponseType {
 })
 export class InventoryDetail {
   private readonly supabaseService: SupabaseService;
+  private readonly destroyRef: DestroyRef;
   private readonly headerSignal: WritableSignal<DetailHeaderType | null>;
   private readonly movementsSignal: WritableSignal<DetailMovementRowType[]>;
   private readonly loadingSignal: WritableSignal<boolean>;
@@ -61,6 +69,7 @@ export class InventoryDetail {
 
   constructor() {
     this.supabaseService = inject(SupabaseService);
+    this.destroyRef = inject(DestroyRef);
     this.headerSignal = signal<DetailHeaderType | null>(null);
     this.movementsSignal = signal<DetailMovementRowType[]>([]);
     this.loadingSignal = signal<boolean>(true);
@@ -73,58 +82,56 @@ export class InventoryDetail {
     this.loading = this.loadingSignal.asReadonly();
     this.errorMessage = this.errorMessageSignal.asReadonly();
 
-    inject(ActivatedRoute).paramMap.subscribe((params: ParamMap): void => {
-      const inventoryId: string = params.get('id') ?? '';
-      this.loadHeader(inventoryId);
-    });
+    inject(ActivatedRoute)
+      .paramMap.pipe(
+        map((params: ParamMap): string => params.get('id') ?? ''),
+        tap((): void => this.loadingSignal.set(true)),
+        switchMap((inventoryId: string): Observable<DetailHeaderResponseType> => this.fetchHeader(inventoryId)),
+        switchMap((headerResult: DetailHeaderResponseType): Observable<DetailLoadResultType> =>
+          this.fetchMovementsFor(headerResult)
+        ),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((result: DetailLoadResultType): void => {
+        this.loadingSignal.set(false);
+        this.headerSignal.set(result.header);
+        this.movementsSignal.set(result.movements);
+        this.errorMessageSignal.set(result.error);
+      });
   }
 
-  private loadHeader(inventoryId: string): void {
-    this.loadingSignal.set(true);
-
-    from(
+  private fetchHeader(inventoryId: string): Observable<DetailHeaderResponseType> {
+    return from(
       this.supabaseService.client
         .from(SUPABASE_VIEW_ENUMERATION.SITE_SUMMARY)
         .select('site:obra, tool:herramienta, currentQuantity:cantidad_actual, supervisor:encargado')
         .eq('inventario_obra_id', inventoryId)
         .maybeSingle()
-    ).subscribe((result: DetailHeaderResponseType): void => {
-      if (result.error) {
-        this.loadingSignal.set(false);
-        this.errorMessageSignal.set(result.error.message);
-        return;
-      }
-
-      this.headerSignal.set(result.data);
-
-      if (result.data) {
-        this.loadMovements(result.data.tool, result.data.site);
-      } else {
-        this.loadingSignal.set(false);
-      }
-    });
+    );
   }
 
-  private loadMovements(tool: string, site: string): void {
-    from(
+  private fetchMovementsFor(headerResult: DetailHeaderResponseType): Observable<DetailLoadResultType> {
+    if (headerResult.error || !headerResult.data) {
+      return of({ header: null, movements: [], error: headerResult.error?.message ?? null });
+    }
+
+    const header: DetailHeaderType = headerResult.data;
+
+    return from(
       this.supabaseService.client
         .from(SUPABASE_VIEW_ENUMERATION.MOVEMENT_HISTORY)
         .select(
           'id, tool:herramienta, sourceSite:obra_origen, destinationSite:obra_destino, quantity:cantidad, deliveredBy:quien_entrega, receivedBy:quien_recibe, date:fecha, notes:observaciones'
         )
-        .eq('herramienta', tool)
-    ).subscribe((result: DetailMovementResponseType): void => {
-      this.loadingSignal.set(false);
-
-      if (result.error) {
-        this.errorMessageSignal.set(result.error.message);
-        return;
-      }
-
-      const rows: DetailMovementRowType[] = result.data ?? [];
-      this.movementsSignal.set(
-        rows.filter((row: DetailMovementRowType): boolean => row.sourceSite === site || row.destinationSite === site)
-      );
-    });
+        .eq('herramienta', header.tool)
+    ).pipe(
+      map((movementsResult: DetailMovementResponseType): DetailLoadResultType => ({
+        header,
+        movements: (movementsResult.data ?? []).filter(
+          (row: DetailMovementRowType): boolean => row.sourceSite === header.site || row.destinationSite === header.site
+        ),
+        error: movementsResult.error?.message ?? null
+      }))
+    );
   }
 }

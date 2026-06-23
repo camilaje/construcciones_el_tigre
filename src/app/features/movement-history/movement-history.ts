@@ -1,4 +1,5 @@
-import { Component, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatTableModule } from '@angular/material/table';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
@@ -34,6 +35,7 @@ interface MovementHistoryResponseType {
 })
 export class MovementHistory {
   private readonly supabaseService: SupabaseService;
+  private readonly destroyRef: DestroyRef;
   private readonly rowsSignal: WritableSignal<MovementHistoryRowType[]>;
   private readonly loadingSignal: WritableSignal<boolean>;
   private readonly errorMessageSignal: WritableSignal<string | null>;
@@ -54,6 +56,7 @@ export class MovementHistory {
 
   constructor() {
     this.supabaseService = inject(SupabaseService);
+    this.destroyRef = inject(DestroyRef);
     this.rowsSignal = signal<MovementHistoryRowType[]>([]);
     this.loadingSignal = signal<boolean>(true);
     this.errorMessageSignal = signal<string | null>(null);
@@ -94,16 +97,18 @@ export class MovementHistory {
         .select(
           'id, tool:herramienta, sourceSite:obra_origen, destinationSite:obra_destino, quantity:cantidad, deliveredBy:quien_entrega, receivedBy:quien_recibe, date:fecha, notes:observaciones'
         )
-    ).subscribe((result: MovementHistoryResponseType): void => {
-      this.loadingSignal.set(false);
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result: MovementHistoryResponseType): void => {
+        this.loadingSignal.set(false);
 
-      if (result.error) {
-        this.errorMessageSignal.set(result.error.message);
-        return;
-      }
+        if (result.error) {
+          this.errorMessageSignal.set(result.error.message);
+          return;
+        }
 
-      this.rowsSignal.set(result.data ?? []);
-    });
+        this.rowsSignal.set(result.data ?? []);
+      });
   }
 
   protected onToolFilterChange(value: string | null): void {
