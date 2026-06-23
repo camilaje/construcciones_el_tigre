@@ -23,7 +23,7 @@ real en vez de fórmulas frágiles.
 - **Angular Material** (Material 3 / system tokens vía `mat.theme()` en `src/styles.scss`)
 - **Supabase** (Postgres + Auth + PostgREST) — proyecto real: `ngiegwgrljveitpwsinf`
 - **RxJS** para todo el flujo asíncrono (ver convenciones abajo)
-- Despliegue planeado: **Netlify** (gratuito)
+- Desplegado en **Netlify** (gratuito) — **https://grand-sopapillas-2fffa3.netlify.app**
 
 ## Convenciones de código (obligatorias para todo código nuevo)
 
@@ -265,10 +265,15 @@ login funciona (ver Playwright más abajo).
   muestra info específica — herramienta y obra — que el header no tiene).
 - ✅ En "Inicio", los botones de acción rápida van antes que las tarjetas de estadísticas, y en mobile
   las tarjetas se acomodan en 2 columnas — así los botones quedan visibles sin necesidad de scroll.
-- ⬜ Despliegue en Netlify — config lista (`netlify.toml`), falta que conectes tu cuenta.
+- ✅ Desplegado en Netlify, conectado al repo de GitHub (auto-deploy en cada push a `main`) —
+  **https://grand-sopapillas-2fffa3.netlify.app**. Verificado end-to-end contra producción: login, datos
+  reales de Supabase, navegación profunda con refresh (`/catalogs/tools` recargado en el navegador no da
+  404, gracias al redirect SPA del `netlify.toml`), logout.
 
-Hay un usuario de prueba en Supabase Auth: `garciamorenojuancamilo526@gmail.com` (contraseña no documentada
-aquí por seguridad — está en el historial de chat de configuración inicial).
+Usuarios reales en Supabase Auth (contraseñas no documentadas aquí por seguridad — quien las necesite las
+pide directamente):
+- `garciamorenojuancamilo526@gmail.com` — Juan Camilo (cuenta original de configuración/pruebas).
+- `paula.benjumeagrisa@gmail.com` — Paula.
 
 ## Cómo levantar el proyecto en local
 
@@ -305,3 +310,43 @@ El flujo login → guard → inventario → logout fue verificado con Playwright
 Authentication → Users → Add user, marcando "Auto Confirm User"), levantar `npm run start`, entrar a
 `http://localhost:4200/` (debe redirigir a `/login`), iniciar sesión, y confirmar que se ve la tabla de
 "Inventario por Obra" (vacía si no hay `inventario_obra` cargado) y que "Cerrar sesión" regresa a `/login`.
+
+## Producción
+
+- **URL:** https://grand-sopapillas-2fffa3.netlify.app
+- **Despliegue:** Netlify conectado directamente al repo de GitHub — cualquier push a `main` dispara un
+  build y deploy automático (`netlify.toml` define el build command, la carpeta de publicación y el
+  redirect SPA). No hay variables de entorno que configurar: la URL y la clave anónima de Supabase están
+  en `src/environments/environment.ts`, son públicas por diseño (la seguridad real la da RLS).
+
+### Cómo agregar un usuario nuevo
+
+No hay pantalla de registro en la app (intencional — es una herramienta interna). El proceso es:
+
+1. Supabase Dashboard → **Authentication → Users → Add user → Create new user**.
+2. Correo + contraseña, marcando **"Auto Confirm User"** (no hay SMTP configurado, así que sin esto el
+   usuario nunca podría confirmar su cuenta por correo y quedaría sin poder entrar).
+3. Esa persona ya puede iniciar sesión en `/login`. El header le mostrará su correo como saludo hasta que
+   se le configure un nombre.
+4. (Opcional) Para que el header salude por nombre ("Hola, {nombre}") en vez de mostrar el correo, hay que
+   correr una vez, con la contraseña de esa cuenta:
+   ```js
+   import { createClient } from '@supabase/supabase-js';
+   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+   await supabase.auth.signInWithPassword({ email: '...', password: '...' });
+   await supabase.auth.updateUser({ data: { full_name: 'Nombre' } });
+   ```
+   Esto es así (en vez de una pantalla de "editar perfil") porque el equipo es chico y no se justifica la
+   pantalla todavía — decisión deliberada, no una limitación técnica.
+
+### Límites de los planes gratuitos (verificado, no es un trial con fecha de vencimiento)
+
+- **Supabase:** gratis indefinidamente. Límites: 500 MB de base de datos, 5 GB de egress/mes — muy por
+  encima de lo que este proyecto puede llegar a usar. **El riesgo real es otro:** los proyectos free se
+  **pausan automáticamente tras 7 días sin actividad**. Si el equipo no usa la app por una semana, alguien
+  tiene que entrar al Dashboard de Supabase y darle "Restore" al proyecto antes de que la app vuelva a
+  funcionar (no se pierde nada, solo hay que reactivarlo).
+- **Netlify:** gratis indefinidamente ("$0 forever"), con 300 créditos/mes que cubren 100 GB de
+  transferencia y 300 minutos de build — para un sitio estático tan chico como este, prácticamente
+  imposible de agotar con uso normal. A diferencia de Supabase, Netlify **no pausa el sitio por
+  inactividad de visitas**.
