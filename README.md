@@ -23,7 +23,7 @@ real en vez de fórmulas frágiles.
 - **Angular Material** (Material 3 / system tokens vía `mat.theme()` en `src/styles.scss`)
 - **Supabase** (Postgres + Auth + PostgREST) — proyecto real: `ngiegwgrljveitpwsinf`
 - **RxJS** para todo el flujo asíncrono (ver convenciones abajo)
-- Desplegado en **Netlify** (gratuito) — **https://grand-sopapillas-2fffa3.netlify.app**
+- Desplegado en **Netlify** (gratuito) — **https://control-de-herramientas-el-tigre.netlify.app**
 
 ## Convenciones de código (obligatorias para todo código nuevo)
 
@@ -266,7 +266,7 @@ login funciona (ver Playwright más abajo).
 - ✅ En "Inicio", los botones de acción rápida van antes que las tarjetas de estadísticas, y en mobile
   las tarjetas se acomodan en 2 columnas — así los botones quedan visibles sin necesidad de scroll.
 - ✅ Desplegado en Netlify, conectado al repo de GitHub (auto-deploy en cada push a `main`) —
-  **https://grand-sopapillas-2fffa3.netlify.app**. Verificado end-to-end contra producción: login, datos
+  **https://control-de-herramientas-el-tigre.netlify.app**. Verificado end-to-end contra producción: login, datos
   reales de Supabase, navegación profunda con refresh (`/catalogs/tools` recargado en el navegador no da
   404, gracias al redirect SPA del `netlify.toml`), logout.
 
@@ -313,7 +313,7 @@ Authentication → Users → Add user, marcando "Auto Confirm User"), levantar `
 
 ## Producción
 
-- **URL:** https://grand-sopapillas-2fffa3.netlify.app
+- **URL:** https://control-de-herramientas-el-tigre.netlify.app
 - **Despliegue:** Netlify conectado directamente al repo de GitHub — cualquier push a `main` dispara un
   build y deploy automático (`netlify.toml` define el build command, la carpeta de publicación y el
   redirect SPA). No hay variables de entorno que configurar: la URL y la clave anónima de Supabase están
