@@ -1,12 +1,9 @@
 .movement-history {
-  &__title {
-    margin: 0 0 1.5rem;
-    font-size: 1.25rem;
-    font-weight: 600;
-  }
-
   &__table-wrapper {
     overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
   }
 
   &__table {

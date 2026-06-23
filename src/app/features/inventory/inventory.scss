@@ -1,12 +1,9 @@
 .inventory {
-  &__title {
-    margin: 0 0 1.5rem;
-    font-size: 1.25rem;
-    font-weight: 600;
-  }
-
   &__table-wrapper {
     overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
   }
 
   &__table {
@@ -17,8 +14,9 @@
     color: var(--mat-sys-error);
   }
 
-  &__supervisor-select {
+  &__supervisor-field {
     width: 160px;
+    margin: 0.5rem 0;
   }
 
   &__filters {

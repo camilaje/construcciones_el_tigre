@@ -1,6 +1,4 @@
 <div class="inventory__page">
-  <h1 class="inventory__title">Inventario por Obra</h1>
-
   @if (errorMessage()) {
     <p class="inventory__error">{{ errorMessage() }}</p>
   }
@@ -56,16 +54,14 @@
         <th mat-header-cell *matHeaderCellDef>Encargado</th>
         <td mat-cell *matCellDef="let row">
           @if (editingId() === row.inventoryId) {
-            <mat-select
-              class="inventory__supervisor-select"
-              [formControl]="editSupervisorControl"
-              placeholder="Sin encargado"
-            >
-              <mat-option [value]="null">Sin encargado</mat-option>
-              @for (supervisor of supervisors(); track supervisor.id) {
-                <mat-option [value]="supervisor.id">{{ supervisor.name }}</mat-option>
-              }
-            </mat-select>
+            <mat-form-field class="inventory__supervisor-field" appearance="outline">
+              <mat-select [formControl]="editSupervisorControl" placeholder="Sin encargado">
+                <mat-option [value]="null">Sin encargado</mat-option>
+                @for (supervisor of supervisors(); track supervisor.id) {
+                  <mat-option [value]="supervisor.id">{{ supervisor.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
           } @else {
             {{ row.supervisor ?? '—' }}
           }

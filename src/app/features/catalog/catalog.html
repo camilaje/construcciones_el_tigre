@@ -1,6 +1,4 @@
 <div class="catalog__page">
-  <h1 class="catalog__title">{{ label }}</h1>
-
   <form
     class="catalog__create-form"
     [formGroup]="createForm"
@@ -31,32 +29,53 @@
   } @else if (items().length === 0) {
     <p class="catalog__empty">No hay {{ label.toLowerCase() }} registrados todavía.</p>
   } @else {
-    <mat-list class="catalog__list">
-      @for (item of items(); track item.id) {
-        <mat-list-item class="catalog__item">
-          @if (editingId() === item.id) {
-            <form class="catalog__edit-form" [formGroup]="editForm" (ngSubmit)="saveEdit(item)">
-              <mat-form-field class="catalog__edit-field" appearance="outline">
-                <input matInput formControlName="name" />
-              </mat-form-field>
-              <button class="catalog__edit-save" mat-icon-button type="submit" [disabled]="editForm.invalid">
+    <div class="catalog__table-wrapper">
+      <table class="catalog__table" mat-table [dataSource]="items()">
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Nombre</th>
+          <td mat-cell *matCellDef="let item">
+            @if (editingId() === item.id) {
+              <form class="catalog__edit-form" [formGroup]="editForm" (ngSubmit)="saveEdit(item)">
+                <mat-form-field class="catalog__edit-field" appearance="outline">
+                  <input matInput formControlName="name" />
+                </mat-form-field>
+              </form>
+            } @else {
+              {{ item.name }}
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let item">
+            @if (editingId() === item.id) {
+              <button
+                class="catalog__action"
+                mat-icon-button
+                type="button"
+                [disabled]="editForm.invalid"
+                (click)="saveEdit(item)"
+              >
                 <mat-icon>check</mat-icon>
               </button>
-              <button class="catalog__edit-cancel" mat-icon-button type="button" (click)="cancelEdit()">
+              <button class="catalog__action" mat-icon-button type="button" (click)="cancelEdit()">
                 <mat-icon>close</mat-icon>
               </button>
-            </form>
-          } @else {
-            <span class="catalog__item-name">{{ item.name }}</span>
-            <button class="catalog__item-edit" mat-icon-button type="button" (click)="startEdit(item)">
-              <mat-icon>edit</mat-icon>
-            </button>
-            <button class="catalog__item-delete" mat-icon-button type="button" (click)="remove(item)">
-              <mat-icon>delete</mat-icon>
-            </button>
-          }
-        </mat-list-item>
-      }
-    </mat-list>
+            } @else {
+              <button class="catalog__action" mat-icon-button type="button" (click)="startEdit(item)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button class="catalog__action" mat-icon-button type="button" (click)="remove(item)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            }
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let row; columns: columns"></tr>
+      </table>
+    </div>
   }
 </div>

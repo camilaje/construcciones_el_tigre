@@ -1,11 +1,17 @@
 <div class="home">
-  <h1 class="home__title">Inicio</h1>
-
   @if (loading()) {
     <mat-spinner class="home__spinner" diameter="32" />
   } @else if (errorMessage()) {
     <p class="home__error">{{ errorMessage() }}</p>
   } @else {
+    <div class="home__actions">
+      <a class="home__action" mat-flat-button color="primary" [routerLink]="appRoute.REGISTER_TOOL">
+        Registrar herramienta nueva
+      </a>
+      <a class="home__action" mat-stroked-button [routerLink]="appRoute.REGISTER_MOVEMENT">Registrar movimiento</a>
+      <a class="home__action" mat-stroked-button [routerLink]="appRoute.INVENTORY"> Ver inventario por obra </a>
+    </div>
+
     <div class="home__stats-grid">
       @for (stat of stats(); track stat.label) {
         <mat-card class="home__stat-card">
@@ -15,14 +21,6 @@
           </mat-card-content>
         </mat-card>
       }
-    </div>
-
-    <div class="home__actions">
-      <a class="home__action" mat-flat-button color="primary" [routerLink]="appRoute.REGISTER_TOOL">
-        Registrar herramienta nueva
-      </a>
-      <a class="home__action" mat-stroked-button [routerLink]="appRoute.REGISTER_MOVEMENT">Registrar movimiento</a>
-      <a class="home__action" mat-stroked-button [routerLink]="appRoute.INVENTORY"> Ver inventario por obra </a>
     </div>
   }
 </div>

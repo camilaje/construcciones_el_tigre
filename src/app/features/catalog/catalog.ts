@@ -5,7 +5,7 @@ import { FormControl, FormGroup, FormGroupDirective, ReactiveFormsModule, Valida
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatListModule } from '@angular/material/list';
+import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PostgrestError } from '@supabase/supabase-js';
@@ -50,7 +50,7 @@ interface NameFormControlsType {
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatListModule,
+    MatTableModule,
     MatIconModule,
     MatProgressSpinnerModule
   ],
@@ -71,6 +71,7 @@ export class Catalog {
 
   protected readonly label: string;
   protected readonly singularLabel: string;
+  protected readonly columns: string[];
   protected readonly items: Signal<CatalogItemType[]>;
   protected readonly loading: Signal<boolean>;
   protected readonly errorMessage: Signal<string | null>;
@@ -89,6 +90,7 @@ export class Catalog {
     this.table = routeData.table;
     this.label = routeData.label;
     this.singularLabel = routeData.singularLabel;
+    this.columns = ['name', 'actions'];
 
     this.itemsSignal = signal<CatalogItemType[]>([]);
     this.loadingSignal = signal<boolean>(true);

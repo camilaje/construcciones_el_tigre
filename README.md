@@ -123,6 +123,11 @@ export class Ejemplo {
   `--mat-sys-surface`, `--mat-sys-on-surface`) se sobreescriben **globalmente** en `body` (`src/styles.scss`),
   no solo en el login — así toda la app hereda negro/blanco/terracota en vez del azul por defecto de
   Material, sin pelear con `!important` contra el tema base.
+- **Cualquier contenedor con fondo oscuro** (ej. `.shell__sidenav`) debe re-escopear `--mat-sys-surface` /
+  `--mat-sys-on-surface` a blanco/negro invertido dentro de su propio selector — si no, los componentes de
+  Material dentro de ese contenedor (hover, ripples, texto) siguen usando los valores globales (pensados
+  para superficies claras) y el texto se vuelve negro-sobre-negro e ilegible, sobre todo en estados como
+  `:hover` que cae de nuevo en el token de sistema en vez del override puntual de color que sí se haya hecho.
 - El header (`shell.html`) es el mismo en todas las pantallas protegidas: logo + **título dinámico según la
   ruta activa** (`route.data['title']`, resuelto en `Shell.resolvePageTitle()` escuchando
   `Router.events`/`NavigationEnd`) + nombre del usuario logueado (`user.user_metadata['full_name']`, con
@@ -241,8 +246,16 @@ login funciona (ver Playwright más abajo).
   van dentro de un contenedor con scroll horizontal propio en vez de desbordar la página.
 - ✅ Colores de marca aplicados globalmente (no solo en login) y header dinámico (logo, título por
   ruta, nombre de usuario) en todas las pantallas protegidas.
-- ⬜ Catálogos (Herramientas/Obras/Encargados) siguen usando `mat-list`, no `mat-table` — pendiente
-  convertir por consistencia visual con Inventario/Historial.
+- ✅ Catálogos (Herramientas/Obras/Encargados) usan `mat-table`, igual que Inventario/Historial.
+- ✅ Tablas con bordes redondeados (`__table-wrapper` con `border-radius` + `overflow: hidden`) en
+  Inventario, Historial, Catálogos y Detalle de inventario.
+- ✅ Sidenav: el hover de los links ya no queda negro-sobre-negro — el override global de
+  `--mat-sys-on-surface` se re-escopea a blanco dentro de `.shell__sidenav` (es una superficie oscura).
+- ✅ Sin títulos `<h1>` redundantes con el título dinámico del header en Inicio, Inventario, Historial,
+  Catálogos, Registrar herramienta y Registrar movimiento (Detalle de inventario conserva el suyo porque
+  muestra info específica — herramienta y obra — que el header no tiene).
+- ✅ En "Inicio", los botones de acción rápida van antes que las tarjetas de estadísticas, y en mobile
+  las tarjetas se acomodan en 2 columnas — así los botones quedan visibles sin necesidad de scroll.
 - ⬜ Despliegue en Netlify — config lista (`netlify.toml`), falta que conectes tu cuenta.
 
 Hay un usuario de prueba en Supabase Auth: `garciamorenojuancamilo526@gmail.com` (contraseña no documentada

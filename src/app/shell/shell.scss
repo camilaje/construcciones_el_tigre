@@ -7,6 +7,14 @@
     color: #ffffff;
     display: flex;
     flex-direction: column;
+
+    // Re-scope the M3 system tokens here: the sidenav is a dark surface, so
+    // "on-surface" (text/icon color) must be white, not the app-wide black
+    // set globally for light surfaces. Without this, Material's hover/state
+    // styles (which fall back to --mat-sys-on-surface) render black text on
+    // an already-black background and become invisible on hover.
+    --mat-sys-surface: #000000;
+    --mat-sys-on-surface: #ffffff;
   }
 
   &__nav-link {
