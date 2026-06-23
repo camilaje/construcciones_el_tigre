@@ -36,7 +36,10 @@ real en vez de fórmulas frágiles.
 4. **Todo método**: tipos explícitos de parámetros y de retorno, y modificador de acceso explícito.
    `protected` para miembros que solo usa el template; `private` para lo puramente interno.
 5. **SCSS en BEM** (`bloque__elemento--modificador`) como clases de estilo, agregadas en el template junto a
-   las clases propias de Angular Material.
+   las clases propias de Angular Material, escrito con **anidación de SCSS**: un único `.bloque { ... }` por
+   archivo, con cada elemento como `&__elemento { ... }` dentro y cada modificador como `&--modificador`
+   anidado dentro de su elemento (ver `shell.scss` para el caso con modificador). Nunca selectores planos
+   `.bloque__elemento { ... }` sueltos al nivel superior del archivo.
 6. **Todo el código en inglés** (archivos, clases, interfaces, variables, métodos, nombres de rutas) — pero
    **no** el esquema de Supabase (tablas/columnas/RPC/vista siguen en español, ya desplegadas con datos
    reales) ni el texto visible para el usuario final (labels, botones, mensajes: siguen en español porque la

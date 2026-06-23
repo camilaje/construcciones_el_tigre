@@ -10,61 +10,61 @@
   --mat-sys-error: #b0492e;
   --mat-sys-surface: #ffffff;
   --mat-sys-on-surface: #000000;
-}
 
-.login__card {
-  width: 100%;
-  max-width: 380px;
-  background-color: #ffffff;
-  box-shadow: none !important;
-}
+  &__card {
+    width: 100%;
+    max-width: 380px;
+    background-color: #ffffff;
+    box-shadow: none !important;
+  }
 
-.login__content {
-  padding-top: 1rem;
-  padding-bottom: 1.5rem;
-}
+  &__content {
+    padding-top: 1rem;
+    padding-bottom: 1.5rem;
+  }
 
-.login__brand {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 2rem;
-}
+  &__brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
 
-.login__logo {
-  width: 160px;
-  height: auto;
-}
+  &__logo {
+    width: 160px;
+    height: auto;
+  }
 
-.login__title {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #000000;
-  text-align: center;
-}
+  &__title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #000000;
+    text-align: center;
+  }
 
-.login__form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
 
-.login__field {
-  width: 100%;
-}
+  &__field {
+    width: 100%;
+  }
 
-.login__error {
-  margin: 0;
-  color: #b0492e;
-  font-size: 0.875rem;
-}
+  &__error {
+    margin: 0;
+    color: #b0492e;
+    font-size: 0.875rem;
+  }
 
-.login__submit {
-  margin-top: 0.5rem;
-}
+  &__submit {
+    margin-top: 0.5rem;
+  }
 
-.login__spinner {
-  margin: 0 auto;
+  &__spinner {
+    margin: 0 auto;
+  }
 }
