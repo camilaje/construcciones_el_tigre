@@ -6,9 +6,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PostgrestError } from '@supabase/supabase-js';
 import { Observable, combineLatest, from } from 'rxjs';
 
-import { SupabaseService } from '../../core/supabase.service';
-import { APP_ROUTE_ENUMERATION } from '../../core/app-route';
-import { SUPABASE_TABLE_ENUMERATION, SUPABASE_VIEW_ENUMERATION } from '../../core/supabase-schema';
+import { APP_ROUTE_ENUMERATION, SUPABASE_TABLE_ENUMERATION, SUPABASE_VIEW_ENUMERATION, SupabaseService } from '../../core';
 
 interface CountResponseType {
   count: number | null;

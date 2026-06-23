@@ -6,8 +6,7 @@ import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 
-import { AuthService } from '../core/auth.service';
-import { APP_ROUTE_ENUMERATION } from '../core/app-route';
+import { APP_ROUTE_ENUMERATION, AuthService } from '../core';
 
 interface NavLinkType {
   path: APP_ROUTE_ENUMERATION;

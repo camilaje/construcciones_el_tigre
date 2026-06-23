@@ -17,9 +17,12 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PostgrestError } from '@supabase/supabase-js';
 import { Observable, combineLatest, from } from 'rxjs';
 
-import { SupabaseService } from '../../core/supabase.service';
-import { NotificationService } from '../../core/notification.service';
-import { SUPABASE_RPC_ENUMERATION, SUPABASE_TABLE_ENUMERATION } from '../../core/supabase-schema';
+import {
+  NotificationService,
+  SUPABASE_RPC_ENUMERATION,
+  SUPABASE_TABLE_ENUMERATION,
+  SupabaseService
+} from '../../core';
 
 interface CatalogItemType {
   id: string;

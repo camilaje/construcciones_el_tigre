@@ -67,6 +67,12 @@ real en vez de fórmulas frágiles.
      `_CONSTANTS` (constantes sueltas/agrupadas) — ej. `SUPABASE_TABLE_ENUMERATION`,
      `SUCCESS_TOAST_DURATION_MS_CONSTANTS`. Los **miembros** del enum también van en `UPPER_SNAKE_CASE`
      (`SUPABASE_TABLE_ENUMERATION.TOOLS`, no `.Tools`).
+10. **Barrels (`index.ts`)** en `core/`, `shell/`, cada subcarpeta de `features/`, y un `features/index.ts`
+    que reexporta todas las features. Cualquier import entre carpetas distintas pasa por el barrel más
+    cercano (`from '../../core'`, `from './features'`), nunca por la ruta del archivo (`from
+    '../../core/supabase.service'`). Excepción: los archivos **dentro** de `core/` se importan entre sí de
+    forma directa (ej. `auth.guard.ts` importa `./auth.service`, no `./index`), para evitar
+    auto-referenciar el propio barrel.
 
 Patrón de referencia (ver `src/app/core/auth.service.ts` o `src/app/features/login/login.ts`):
 

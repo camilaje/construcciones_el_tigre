@@ -1,16 +1,16 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/auth.guard';
-import { APP_ROUTE_ENUMERATION } from './core/app-route';
-import { SUPABASE_TABLE_ENUMERATION } from './core/supabase-schema';
-import { Shell } from './shell/shell';
-import { Login } from './features/login/login';
-import { Home } from './features/home/home';
-import { Inventory } from './features/inventory/inventory';
-import { InventoryDetail } from './features/inventory-detail/inventory-detail';
-import { RegisterTool } from './features/register-tool/register-tool';
-import { RegisterMovement } from './features/register-movement/register-movement';
-import { MovementHistory } from './features/movement-history/movement-history';
-import { Catalog } from './features/catalog/catalog';
+import { APP_ROUTE_ENUMERATION, SUPABASE_TABLE_ENUMERATION, authGuard } from './core';
+import { Shell } from './shell';
+import {
+  Login,
+  Home,
+  Inventory,
+  InventoryDetail,
+  RegisterTool,
+  RegisterMovement,
+  MovementHistory,
+  Catalog
+} from './features';
 
 export const routes: Routes = [
   { path: APP_ROUTE_ENUMERATION.LOGIN.slice(1), component: Login },

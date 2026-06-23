@@ -4,8 +4,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PostgrestError } from '@supabase/supabase-js';
 import { from } from 'rxjs';
 
-import { SupabaseService } from '../../core/supabase.service';
-import { SUPABASE_VIEW_ENUMERATION } from '../../core/supabase-schema';
+import { SUPABASE_VIEW_ENUMERATION, SupabaseService } from '../../core';
 
 interface MovementHistoryRowType {
   id: string;

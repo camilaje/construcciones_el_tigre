@@ -7,8 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
-import { AuthService } from '../../core/auth.service';
-import { APP_ROUTE_ENUMERATION } from '../../core/app-route';
+import { APP_ROUTE_ENUMERATION, AuthService } from '../../core';
 
 interface LoginFormControlsType {
   email: FormControl<string>;

@@ -9,9 +9,12 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PostgrestError } from '@supabase/supabase-js';
 import { Observable, combineLatest, from } from 'rxjs';
 
-import { SupabaseService } from '../../core/supabase.service';
-import { NotificationService } from '../../core/notification.service';
-import { POSTGRES_ERROR_CODE_ENUMERATION, SUPABASE_TABLE_ENUMERATION } from '../../core/supabase-schema';
+import {
+  NotificationService,
+  POSTGRES_ERROR_CODE_ENUMERATION,
+  SUPABASE_TABLE_ENUMERATION,
+  SupabaseService
+} from '../../core';
 
 interface CatalogItemType {
   id: string;
