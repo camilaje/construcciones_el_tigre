@@ -1,0 +1,68 @@
+<div class="register-tool__page">
+  @if (loadingCatalogs()) {
+    <mat-spinner class="register-tool__spinner" diameter="32" />
+  } @else {
+    <mat-card class="register-tool__card">
+      <mat-card-content>
+        <h1 class="register-tool__title">Registrar herramienta nueva en obra</h1>
+
+        <form class="register-tool__form" [formGroup]="form" (ngSubmit)="submit()">
+          <mat-form-field class="register-tool__field" appearance="outline">
+            <mat-label>Herramienta</mat-label>
+            <mat-select formControlName="toolId">
+              @for (tool of tools(); track tool.id) {
+                <mat-option [value]="tool.id">{{ tool.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field class="register-tool__field" appearance="outline">
+            <mat-label>Obra</mat-label>
+            <mat-select formControlName="siteId">
+              @for (site of sites(); track site.id) {
+                <mat-option [value]="site.id">{{ site.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field class="register-tool__field" appearance="outline">
+            <mat-label>Cantidad inicial</mat-label>
+            <input matInput type="number" formControlName="initialQuantity" min="1" />
+          </mat-form-field>
+
+          <mat-form-field class="register-tool__field" appearance="outline">
+            <mat-label>Encargado</mat-label>
+            <mat-select formControlName="supervisorId">
+              <mat-option [value]="null">Sin encargado</mat-option>
+              @for (supervisor of supervisors(); track supervisor.id) {
+                <mat-option [value]="supervisor.id">{{ supervisor.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          @if (errorMessage()) {
+            <p class="register-tool__error">{{ errorMessage() }}</p>
+          }
+
+          @if (successMessage()) {
+            <p class="register-tool__success">{{ successMessage() }}</p>
+          }
+
+          <button
+            class="register-tool__submit"
+            mat-flat-button
+            color="primary"
+            type="submit"
+            [disabled]="form.invalid || saving()"
+          >
+            @if (saving()) {
+              <mat-spinner class="register-tool__submit-spinner" diameter="20" />
+            } @else {
+              Registrar
+            }
+          </button>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

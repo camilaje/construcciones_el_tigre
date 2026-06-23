@@ -1,0 +1,34 @@
+<mat-sidenav-container class="shell">
+  <mat-sidenav class="shell__sidenav" mode="side" [opened]="true">
+    <div class="shell__brand">
+      <img class="shell__logo" src="/logo.png" alt="Construcciones El Tigre" />
+    </div>
+
+    <mat-nav-list class="shell__nav-list">
+      @for (link of navLinks; track link.path) {
+        <a
+          class="shell__nav-link"
+          mat-list-item
+          [routerLink]="link.path"
+          routerLinkActive="shell__nav-link--active"
+          [routerLinkActiveOptions]="{ exact: link.path === '/' }"
+        >
+          <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
+          <span matListItemTitle>{{ link.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="shell__content">
+    <mat-toolbar color="primary" class="shell__toolbar">
+      <span class="shell__toolbar-title">Control de Herramientas</span>
+      <span class="shell__spacer"></span>
+      <button class="shell__logout" mat-button (click)="logout()">Cerrar sesión</button>
+    </mat-toolbar>
+
+    <main class="shell__page">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

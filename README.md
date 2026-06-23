@@ -37,6 +37,13 @@ real en vez de fórmulas frágiles.
    `protected` para miembros que solo usa el template; `private` para lo puramente interno.
 5. **SCSS en BEM** (`bloque__elemento--modificador`) como clases de estilo, agregadas en el template junto a
    las clases propias de Angular Material.
+6. **Todo el código en inglés** (archivos, clases, interfaces, variables, métodos, nombres de rutas) — pero
+   **no** el esquema de Supabase (tablas/columnas/RPC/vista siguen en español, ya desplegadas con datos
+   reales) ni el texto visible para el usuario final (labels, botones, mensajes: siguen en español porque la
+   usuaria de la app es personal de obra, no developers). El puente entre ambos mundos se resuelve con
+   *column aliasing* de PostgREST en cada `.select()` (`'site:obra, tool:herramienta'`), así la respuesta de
+   Supabase ya llega con propiedades en inglés sin tocar la base de datos. Ver `register-tool.ts` o
+   `inventory.ts` como referencia.
 
 Patrón de referencia (ver `src/app/core/auth.service.ts` o `src/app/features/login/login.ts`):
 
@@ -78,10 +85,15 @@ src/app/
     supabase.service.ts   # cliente único de Supabase (createClient), inyectable
     auth.service.ts        # estado de sesión (signals) + signIn/signOut (Observables)
     auth.guard.ts           # CanActivateFn: redirige a /login si no hay sesión
+  shell/
+    shell.ts                # layout con sidenav (menú de módulos) + toolbar + logout
   features/
-    login/                  # pantalla de login (Material + marca)
-    inventario/             # "Inventario por Obra", lee la vista resumen_por_obra
-  app.routes.ts             # '/login' público, '/' protegida con authGuard
+    login/                  # pantalla de login (Material + marca), pública
+    home/                   # "Inicio": dashboard con conteos (herramientas/obras/encargados/etc.)
+    inventory/               # "Inventario por Obra", lee la vista resumen_por_obra
+    register-tool/           # "Registrar herramienta nueva en obra" (alta inicial)
+  app.routes.ts             # '/login' público; '/' (Shell) protegida con authGuard, con
+                             # hijos '', 'inventory', 'register-tool'
 ```
 
 ### Base de datos (Supabase)
@@ -124,9 +136,11 @@ login funciona (ver Playwright más abajo).
   (22 herramientas, 2 obras, 7 encargados).
 - ✅ Login (Supabase Auth, email+password) con marca aplicada.
 - ✅ Guard de rutas — sin sesión, todo redirige a `/login`.
+- ✅ Shell con sidenav (menú de módulos) y logout centralizado.
+- ✅ Pantalla "Inicio" — dashboard con conteos reales (herramientas, obras, encargados, combinaciones con
+  stock, unidades totales, movimientos) para que no se vea vacía al recargar.
 - ✅ Pantalla "Inventario por Obra" — lee `resumen_por_obra`, muestra estado vacío si no hay datos.
-- ✅ Logout.
-- ⬜ "Registrar herramienta nueva en obra" (alta inicial) — pendiente.
+- ✅ Pantalla "Registrar herramienta nueva en obra" (alta inicial) — inserta en `inventario_obra`.
 - ⬜ "Registrar movimiento/traslado" — pendiente (la función `transferir_herramienta` ya existe en la BD).
 - ⬜ Historial de movimientos, CRUD de catálogos, detalle de un registro de inventario — pendientes.
 

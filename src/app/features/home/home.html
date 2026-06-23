@@ -1,0 +1,27 @@
+<div class="home">
+  <h1 class="home__title">Inicio</h1>
+
+  @if (loading()) {
+    <mat-spinner class="home__spinner" diameter="32" />
+  } @else if (errorMessage()) {
+    <p class="home__error">{{ errorMessage() }}</p>
+  } @else {
+    <div class="home__stats-grid">
+      @for (stat of stats(); track stat.label) {
+        <mat-card class="home__stat-card">
+          <mat-card-content class="home__stat-content">
+            <span class="home__stat-value">{{ stat.value }}</span>
+            <span class="home__stat-label">{{ stat.label }}</span>
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+
+    <div class="home__actions">
+      <a class="home__action" mat-flat-button color="primary" routerLink="/register-tool">
+        Registrar herramienta nueva
+      </a>
+      <a class="home__action" mat-stroked-button routerLink="/inventory"> Ver inventario por obra </a>
+    </div>
+  }
+</div>
