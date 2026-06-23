@@ -105,8 +105,11 @@ src/app/
     inventory/               # "Inventario por Obra", lee la vista resumen_por_obra
     register-tool/           # "Registrar herramienta nueva en obra" (alta inicial)
     register-movement/       # "Registrar movimiento" (traslado obra-a-obra), usa el RPC transferir_herramienta
+    catalog/                 # CRUD genérico (create/edit/delete por nombre), reusado en 3 rutas vía
+                             # route data: catalogs/tools, catalogs/sites, catalogs/supervisors
   app.routes.ts             # '/login' público; '/' (Shell) protegida con authGuard, con
-                             # hijos '', 'inventory', 'register-tool', 'register-movement'
+                             # hijos '', 'inventory', 'register-tool', 'register-movement',
+                             # 'catalogs/tools', 'catalogs/sites', 'catalogs/supervisors'
 ```
 
 ### Base de datos (Supabase)
@@ -143,6 +146,15 @@ login funciona (ver Playwright más abajo).
 4. La vista consolidada es una consulta agregada real, no una fórmula frágil.
 5. `cantidad_inicial` se ingresa una sola vez, al llegar la herramienta por primera vez a una obra.
 
+### Qué entidades son CRUD completo y cuáles no (decisión deliberada)
+
+- **Herramientas, Obras, Encargados** (catálogos): CRUD completo — create/read/update/delete vía
+  `features/catalog/`. No hay razón de negocio para restringirlo.
+- **Inventario (`inventario_obra`)**: solo lectura + alta inicial. `cantidad_actual` nunca se edita a mano
+  (es justo el bug que el rediseño corrige) — la única forma de cambiarla es a través de un movimiento.
+- **Movimientos**: solo lectura + creación. Sin editar ni borrar — es el historial/auditoría; una
+  corrección se hace registrando un movimiento nuevo, no reescribiendo el pasado.
+
 ## Estado actual (qué está construido)
 
 - ✅ Esquema completo de base de datos, aplicado al proyecto Supabase real, con seed del catálogo legacy
@@ -156,7 +168,10 @@ login funciona (ver Playwright más abajo).
 - ✅ Pantalla "Registrar herramienta nueva en obra" (alta inicial) — inserta en `inventario_obra`.
 - ✅ Pantalla "Registrar movimiento" — llama al RPC `transferir_herramienta`, valida que origen y destino
   sean distintos, y muestra los mensajes de error del RPC (stock insuficiente, etc.) tal cual.
-- ⬜ Historial de movimientos, CRUD de catálogos, detalle de un registro de inventario — pendientes.
+- ✅ CRUD de catálogos (Herramientas, Obras, Encargados) — `features/catalog/`, una sola pantalla
+  reusada por route data, con manejo de error de nombre duplicado y de borrado bloqueado por FK.
+- ✅ Toasts de éxito (`NotificationService`) en formularios, en vez de mensajes fijos en pantalla.
+- ⬜ Historial de movimientos, detalle de un registro de inventario — pendientes.
 - ⬜ Despliegue en Netlify — pendiente.
 
 Hay un usuario de prueba en Supabase Auth: `garciamorenojuancamilo526@gmail.com` (contraseña no documentada

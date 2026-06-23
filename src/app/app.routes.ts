@@ -6,6 +6,7 @@ import { Home } from './features/home/home';
 import { Inventory } from './features/inventory/inventory';
 import { RegisterTool } from './features/register-tool/register-tool';
 import { RegisterMovement } from './features/register-movement/register-movement';
+import { Catalog } from './features/catalog/catalog';
 
 export const routes: Routes = [
   { path: 'login', component: Login },
@@ -17,7 +18,22 @@ export const routes: Routes = [
       { path: '', component: Home },
       { path: 'inventory', component: Inventory },
       { path: 'register-tool', component: RegisterTool },
-      { path: 'register-movement', component: RegisterMovement }
+      { path: 'register-movement', component: RegisterMovement },
+      {
+        path: 'catalogs/tools',
+        component: Catalog,
+        data: { table: 'herramientas', label: 'Herramientas', singularLabel: 'Herramienta' }
+      },
+      {
+        path: 'catalogs/sites',
+        component: Catalog,
+        data: { table: 'obras', label: 'Obras', singularLabel: 'Obra' }
+      },
+      {
+        path: 'catalogs/supervisors',
+        component: Catalog,
+        data: { table: 'encargados', label: 'Encargados', singularLabel: 'Encargado' }
+      }
     ]
   },
   { path: '**', redirectTo: '' }

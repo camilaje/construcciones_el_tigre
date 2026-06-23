@@ -47,7 +47,10 @@ export class Shell {
       { path: '/', label: 'Inicio', icon: 'home' },
       { path: '/inventory', label: 'Inventario por Obra', icon: 'inventory_2' },
       { path: '/register-tool', label: 'Registrar herramienta nueva', icon: 'add_box' },
-      { path: '/register-movement', label: 'Registrar movimiento', icon: 'sync_alt' }
+      { path: '/register-movement', label: 'Registrar movimiento', icon: 'sync_alt' },
+      { path: '/catalogs/tools', label: 'Catálogo de herramientas', icon: 'construction' },
+      { path: '/catalogs/sites', label: 'Catálogo de obras', icon: 'location_city' },
+      { path: '/catalogs/supervisors', label: 'Catálogo de encargados', icon: 'badge' }
     ];
   }
 

@@ -1,0 +1,62 @@
+<div class="catalog__page">
+  <h1 class="catalog__title">{{ label }}</h1>
+
+  <form
+    class="catalog__create-form"
+    [formGroup]="createForm"
+    (ngSubmit)="create(formDirective)"
+    #formDirective="ngForm"
+  >
+    <mat-form-field class="catalog__create-field" appearance="outline">
+      <mat-label>Nuevo/a {{ singularLabel }}</mat-label>
+      <input matInput formControlName="name" />
+    </mat-form-field>
+    <button
+      class="catalog__create-submit"
+      mat-flat-button
+      color="primary"
+      type="submit"
+      [disabled]="createForm.invalid || saving()"
+    >
+      Agregar
+    </button>
+  </form>
+
+  @if (errorMessage()) {
+    <p class="catalog__error">{{ errorMessage() }}</p>
+  }
+
+  @if (loading()) {
+    <mat-spinner class="catalog__spinner" diameter="32" />
+  } @else if (items().length === 0) {
+    <p class="catalog__empty">No hay {{ label.toLowerCase() }} registrados todavía.</p>
+  } @else {
+    <mat-list class="catalog__list">
+      @for (item of items(); track item.id) {
+        <mat-list-item class="catalog__item">
+          @if (editingId() === item.id) {
+            <form class="catalog__edit-form" [formGroup]="editForm" (ngSubmit)="saveEdit(item)">
+              <mat-form-field class="catalog__edit-field" appearance="outline">
+                <input matInput formControlName="name" />
+              </mat-form-field>
+              <button class="catalog__edit-save" mat-icon-button type="submit" [disabled]="editForm.invalid">
+                <mat-icon>check</mat-icon>
+              </button>
+              <button class="catalog__edit-cancel" mat-icon-button type="button" (click)="cancelEdit()">
+                <mat-icon>close</mat-icon>
+              </button>
+            </form>
+          } @else {
+            <span class="catalog__item-name">{{ item.name }}</span>
+            <button class="catalog__item-edit" mat-icon-button type="button" (click)="startEdit(item)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button class="catalog__item-delete" mat-icon-button type="button" (click)="remove(item)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          }
+        </mat-list-item>
+      }
+    </mat-list>
+  }
+</div>
