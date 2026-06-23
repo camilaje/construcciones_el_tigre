@@ -6,6 +6,7 @@ import { Shell } from './shell/shell';
 import { Login } from './features/login/login';
 import { Home } from './features/home/home';
 import { Inventory } from './features/inventory/inventory';
+import { InventoryDetail } from './features/inventory-detail/inventory-detail';
 import { RegisterTool } from './features/register-tool/register-tool';
 import { RegisterMovement } from './features/register-movement/register-movement';
 import { MovementHistory } from './features/movement-history/movement-history';
@@ -20,6 +21,7 @@ export const routes: Routes = [
     children: [
       { path: APP_ROUTE_ENUMERATION.HOME.slice(1), component: Home },
       { path: APP_ROUTE_ENUMERATION.INVENTORY.slice(1), component: Inventory },
+      { path: `${APP_ROUTE_ENUMERATION.INVENTORY.slice(1)}/:id`, component: InventoryDetail },
       { path: APP_ROUTE_ENUMERATION.REGISTER_TOOL.slice(1), component: RegisterTool },
       { path: APP_ROUTE_ENUMERATION.REGISTER_MOVEMENT.slice(1), component: RegisterMovement },
       { path: APP_ROUTE_ENUMERATION.MOVEMENT_HISTORY.slice(1), component: MovementHistory },

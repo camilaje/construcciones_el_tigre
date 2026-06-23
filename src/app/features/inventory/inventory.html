@@ -62,6 +62,9 @@
               <mat-icon>close</mat-icon>
             </button>
           } @else {
+            <a class="inventory__action" mat-icon-button [routerLink]="detailPath(row)">
+              <mat-icon>visibility</mat-icon>
+            </a>
             <button class="inventory__action" mat-icon-button type="button" (click)="startEditSupervisor(row)">
               <mat-icon>edit</mat-icon>
             </button>

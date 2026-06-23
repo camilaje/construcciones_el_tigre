@@ -1,0 +1,47 @@
+.inventory-detail {
+  &__back {
+    margin-bottom: 1rem;
+  }
+
+  &__spinner {
+    margin: 3rem auto;
+  }
+
+  &__error {
+    color: var(--mat-sys-error);
+  }
+
+  &__header-card {
+    margin-bottom: 1.5rem;
+    max-width: 480px;
+  }
+
+  &__header-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  &__header-stats {
+    display: flex;
+    gap: 1.5rem;
+    color: #595959;
+    font-size: 0.875rem;
+  }
+
+  &__subtitle {
+    margin: 0 0 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  &__table {
+    width: 100%;
+  }
+}

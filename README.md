@@ -117,7 +117,9 @@ src/app/
   features/
     login/                  # pantalla de login (Material + marca), pública
     home/                   # "Inicio": dashboard con conteos (herramientas/obras/encargados/etc.)
-    inventory/               # "Inventario por Obra", lee la vista resumen_por_obra
+    inventory/               # "Inventario por Obra", lee la vista resumen_por_obra; editar encargado y
+                             # borrar (si no tiene movimientos); link a inventory-detail por fila
+    inventory-detail/        # ficha de un registro: cabecera + línea de tiempo filtrada de movimientos
     register-tool/           # "Registrar herramienta nueva en obra" (alta inicial)
     register-movement/       # "Registrar movimiento" (traslado obra-a-obra), usa el RPC transferir_herramienta
     movement-history/        # "Historial de movimientos", lee la vista historial_movimientos
@@ -194,7 +196,8 @@ login funciona (ver Playwright más abajo).
 - ✅ Editar/borrar en "Inventario por Obra" — reasignar encargado inline, y borrar un registro sin
   movimientos asociados (bloqueado con mensaje claro si tiene historial, vía FK restrict). La
   `cantidad_actual` sigue sin ser editable directamente, por diseño.
-- ⬜ Detalle de un registro de inventario (línea de tiempo de movimientos) — pendiente.
+- ✅ Detalle de un registro de inventario (`/inventory/:id`) — cabecera (herramienta, obra, cantidad,
+  encargado) + línea de tiempo de movimientos donde esa obra es origen o destino.
 - ⬜ Despliegue en Netlify — pendiente.
 
 Hay un usuario de prueba en Supabase Auth: `garciamorenojuancamilo526@gmail.com` (contraseña no documentada

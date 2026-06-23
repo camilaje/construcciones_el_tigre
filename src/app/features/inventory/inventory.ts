@@ -1,4 +1,5 @@
 import { Component, Signal, WritableSignal, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -10,6 +11,7 @@ import { from } from 'rxjs';
 
 import { SupabaseService } from '../../core/supabase.service';
 import { NotificationService } from '../../core/notification.service';
+import { APP_ROUTE_ENUMERATION } from '../../core/app-route';
 import { POSTGRES_ERROR_CODE_ENUMERATION, SUPABASE_TABLE_ENUMERATION, SUPABASE_VIEW_ENUMERATION } from '../../core/supabase-schema';
 
 interface SiteSummaryRowType {
@@ -43,6 +45,7 @@ interface MutationResponseType {
 @Component({
   selector: 'app-inventory',
   imports: [
+    RouterLink,
     ReactiveFormsModule,
     MatTableModule,
     MatProgressSpinnerModule,
@@ -98,6 +101,10 @@ export class Inventory {
 
   protected cancelEditSupervisor(): void {
     this.editingIdSignal.set(null);
+  }
+
+  protected detailPath(row: SiteSummaryRowType): string {
+    return `${APP_ROUTE_ENUMERATION.INVENTORY}/${row.inventoryId}`;
   }
 
   protected saveSupervisor(row: SiteSummaryRowType): void {

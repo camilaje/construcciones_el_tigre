@@ -1,0 +1,69 @@
+<div class="inventory-detail__page">
+  <a class="inventory-detail__back" mat-button [routerLink]="appRoute.INVENTORY">
+    <mat-icon>arrow_back</mat-icon>
+    Volver al inventario
+  </a>
+
+  @if (loading()) {
+    <mat-spinner class="inventory-detail__spinner" diameter="32" />
+  } @else if (errorMessage()) {
+    <p class="inventory-detail__error">{{ errorMessage() }}</p>
+  } @else if (!header()) {
+    <p class="inventory-detail__empty">No se encontró este registro de inventario.</p>
+  } @else {
+    <mat-card class="inventory-detail__header-card">
+      <mat-card-content class="inventory-detail__header-content">
+        <h1 class="inventory-detail__title">{{ header()!.tool }} — {{ header()!.site }}</h1>
+        <div class="inventory-detail__header-stats">
+          <span class="inventory-detail__header-stat">
+            <strong>{{ header()!.currentQuantity }}</strong> unidades actuales
+          </span>
+          <span class="inventory-detail__header-stat">
+            Encargado: {{ header()!.supervisor ?? '—' }}
+          </span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <h2 class="inventory-detail__subtitle">Línea de tiempo de movimientos</h2>
+
+    @if (movements().length === 0) {
+      <p class="inventory-detail__empty">Sin movimientos registrados para este registro.</p>
+    } @else {
+      <table class="inventory-detail__table" mat-table [dataSource]="movements()">
+        <ng-container matColumnDef="date">
+          <th mat-header-cell *matHeaderCellDef>Fecha</th>
+          <td mat-cell *matCellDef="let row">{{ row.date }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="route">
+          <th mat-header-cell *matHeaderCellDef>Movimiento</th>
+          <td mat-cell *matCellDef="let row">{{ row.sourceSite }} → {{ row.destinationSite }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="quantity">
+          <th mat-header-cell *matHeaderCellDef>Cantidad</th>
+          <td mat-cell *matCellDef="let row">{{ row.quantity }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="deliveredBy">
+          <th mat-header-cell *matHeaderCellDef>Quien entrega</th>
+          <td mat-cell *matCellDef="let row">{{ row.deliveredBy ?? '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="receivedBy">
+          <th mat-header-cell *matHeaderCellDef>Quien recibe</th>
+          <td mat-cell *matCellDef="let row">{{ row.receivedBy ?? '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="notes">
+          <th mat-header-cell *matHeaderCellDef>Observaciones</th>
+          <td mat-cell *matCellDef="let row">{{ row.notes ?? '—' }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let row; columns: columns"></tr>
+      </table>
+    }
+  }
+</div>
