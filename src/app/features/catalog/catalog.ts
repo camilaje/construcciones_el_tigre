@@ -11,6 +11,7 @@ import { PostgrestError } from '@supabase/supabase-js';
 import { from } from 'rxjs';
 
 import {
+  ConfirmationService,
   NotificationService,
   POSTGRES_ERROR_CODE_ENUMERATION,
   SUPABASE_TABLE_ENUMERATION,
@@ -58,6 +59,7 @@ interface NameFormControlsType {
 export class Catalog {
   private readonly supabaseService: SupabaseService;
   private readonly notificationService: NotificationService;
+  private readonly confirmationService: ConfirmationService;
   private readonly table: SUPABASE_TABLE_ENUMERATION;
   private readonly itemsSignal: WritableSignal<CatalogItemType[]>;
   private readonly loadingSignal: WritableSignal<boolean>;
@@ -78,6 +80,7 @@ export class Catalog {
   constructor() {
     this.supabaseService = inject(SupabaseService);
     this.notificationService = inject(NotificationService);
+    this.confirmationService = inject(ConfirmationService);
 
     const routeData: CatalogRouteDataType = inject(ActivatedRoute).snapshot.data as CatalogRouteDataType;
     this.table = routeData.table;
@@ -162,21 +165,25 @@ export class Catalog {
   }
 
   protected remove(item: CatalogItemType): void {
-    if (!confirm(`¿Eliminar "${item.name}"? Esta acción no se puede deshacer.`)) {
-      return;
-    }
-
-    from(this.supabaseService.client.from(this.table).delete().eq('id', item.id)).subscribe(
-      (result: MutationResponseType): void => {
-        if (result.error) {
-          this.errorMessageSignal.set(this.friendlyError(result.error, item.name));
+    this.confirmationService
+      .confirm(`¿Eliminar "${item.name}"? Esta acción no se puede deshacer.`)
+      .subscribe((confirmed: boolean): void => {
+        if (!confirmed) {
           return;
         }
 
-        this.notificationService.success(`Se eliminó "${item.name}" correctamente.`);
-        this.loadItems();
-      }
-    );
+        from(this.supabaseService.client.from(this.table).delete().eq('id', item.id)).subscribe(
+          (result: MutationResponseType): void => {
+            if (result.error) {
+              this.errorMessageSignal.set(this.friendlyError(result.error, item.name));
+              return;
+            }
+
+            this.notificationService.success(`Se eliminó "${item.name}" correctamente.`);
+            this.loadItems();
+          }
+        );
+      });
   }
 
   private friendlyError(error: PostgrestError, name: string): string {

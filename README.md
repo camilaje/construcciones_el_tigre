@@ -54,20 +54,25 @@ real en vez de fórmulas frágiles.
    `formDirective.resetForm(valores)` (con `#formDirective="ngForm"` en el `<form>` y pasándolo a tu método
    de submit) en vez de `this.form.reset(valores)` — `form.reset()` no limpia el flag `submitted` de
    Angular, así que los campos requeridos vacíos se ven en rojo aunque el usuario no los haya tocado.
-8. **Nada de strings/códigos quemados que se repiten entre archivos.** Nombres de tabla/vista/RPC de
+8. **Confirmaciones destructivas (borrar) usan `ConfirmationService.confirm(mensaje)`**
+   (`core/confirmation.service.ts`, envuelve SweetAlert2 con `Swal.fire(...)`) en vez de `window.confirm()`
+   nativo. Devuelve `Observable<boolean>` — se suscribe y solo se procede si `confirmed` es `true`. Nunca
+   `async/await` con el resultado de `Swal.fire()`, aunque internamente sea una Promise: se envuelve con
+   `from()` igual que cualquier otra llamada async, por la regla de RxJS del punto 1.
+9. **Nada de strings/códigos quemados que se repiten entre archivos.** Nombres de tabla/vista/RPC de
    Supabase y códigos de error de Postgres viven en `core/supabase-schema.ts`
    (`SUPABASE_TABLE_ENUMERATION`, `SUPABASE_VIEW_ENUMERATION`, `SUPABASE_RPC_ENUMERATION`,
    `POSTGRES_ERROR_CODE_ENUMERATION`); las rutas de la app viven en `core/app-route.ts`
    (`APP_ROUTE_ENUMERATION`). Todo `.from(...)`, `.rpc(...)`, `path`/`data` de rutas, `routerLink`,
    `navigateByUrl` y comparación de `error.code` pasa por uno de estos enums, nunca por un literal.
-9. **Convención de nombres para tipos vs. enums/constantes** (distinta de la del punto 3, que es sobre
+10. **Convención de nombres para tipos vs. enums/constantes** (distinta de la del punto 3, que es sobre
    modificadores de acceso):
    - Interfaces/type alias: PascalCase con sufijo `Type` (`CatalogItemType`, `NavLinkType`).
    - Enums y constantes exportadas sueltas: `UPPER_SNAKE_CASE` con sufijo `_ENUMERATION` (enums) o
      `_CONSTANTS` (constantes sueltas/agrupadas) — ej. `SUPABASE_TABLE_ENUMERATION`,
      `SUCCESS_TOAST_DURATION_MS_CONSTANTS`. Los **miembros** del enum también van en `UPPER_SNAKE_CASE`
      (`SUPABASE_TABLE_ENUMERATION.TOOLS`, no `.Tools`).
-10. **Barrels (`index.ts`)** en `core/`, `shell/`, cada subcarpeta de `features/`, y un `features/index.ts`
+11. **Barrels (`index.ts`)** en `core/`, `shell/`, cada subcarpeta de `features/`, y un `features/index.ts`
     que reexporta todas las features. Cualquier import entre carpetas distintas pasa por el barrel más
     cercano (`from '../../core'`, `from './features'`), nunca por la ruta del archivo (`from
     '../../core/supabase.service'`). Excepción: los archivos **dentro** de `core/` se importan entre sí de
@@ -115,6 +120,7 @@ src/app/
     auth.service.ts        # estado de sesión (signals) + signIn/signOut (Observables)
     auth.guard.ts           # CanActivateFn: redirige a /login si no hay sesión
     notification.service.ts # toast de éxito (MatSnackBar, autodesaparece a los 5s)
+    confirmation.service.ts # popup de confirmar/cancelar (SweetAlert2) para acciones destructivas
     supabase-schema.ts      # enums: tablas/vista/RPC de Supabase, códigos de error de Postgres
     app-route.ts            # enum APP_ROUTE_ENUMERATION con todas las rutas de la app
   shell/
@@ -204,7 +210,11 @@ login funciona (ver Playwright más abajo).
   `cantidad_actual` sigue sin ser editable directamente, por diseño.
 - ✅ Detalle de un registro de inventario (`/inventory/:id`) — cabecera (herramienta, obra, cantidad,
   encargado) + línea de tiempo de movimientos donde esa obra es origen o destino.
-- ⬜ Despliegue en Netlify — pendiente.
+- ✅ Barrels (`index.ts`) en `core/`, `shell/` y cada feature, con `features/index.ts` agregador.
+- ✅ Popups de confirmar/cancelar para borrar (Catálogos, Inventario) con SweetAlert2
+  (`core/confirmation.service.ts`), en vez de `window.confirm()` nativo.
+- ⬜ Despliegue en Netlify — config lista (`netlify.toml`), falta que conectes tu cuenta.
+- ⬜ Filtros en "Inventario por Obra" y "Historial de movimientos" — pendientes.
 
 Hay un usuario de prueba en Supabase Auth: `garciamorenojuancamilo526@gmail.com` (contraseña no documentada
 aquí por seguridad — está en el historial de chat de configuración inicial).

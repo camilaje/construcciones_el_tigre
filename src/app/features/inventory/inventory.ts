@@ -11,6 +11,7 @@ import { from } from 'rxjs';
 
 import {
   APP_ROUTE_ENUMERATION,
+  ConfirmationService,
   NotificationService,
   POSTGRES_ERROR_CODE_ENUMERATION,
   SUPABASE_TABLE_ENUMERATION,
@@ -63,6 +64,7 @@ interface MutationResponseType {
 export class Inventory {
   private readonly supabaseService: SupabaseService;
   private readonly notificationService: NotificationService;
+  private readonly confirmationService: ConfirmationService;
   private readonly rowsSignal: WritableSignal<SiteSummaryRowType[]>;
   private readonly loadingSignal: WritableSignal<boolean>;
   private readonly errorMessageSignal: WritableSignal<string | null>;
@@ -80,6 +82,7 @@ export class Inventory {
   constructor() {
     this.supabaseService = inject(SupabaseService);
     this.notificationService = inject(NotificationService);
+    this.confirmationService = inject(ConfirmationService);
     this.rowsSignal = signal<SiteSummaryRowType[]>([]);
     this.loadingSignal = signal<boolean>(true);
     this.errorMessageSignal = signal<string | null>(null);
@@ -132,25 +135,29 @@ export class Inventory {
   }
 
   protected remove(row: SiteSummaryRowType): void {
-    if (!confirm(`¿Eliminar el registro de "${row.tool}" en "${row.site}"? Esta acción no se puede deshacer.`)) {
-      return;
-    }
+    this.confirmationService
+      .confirm(`¿Eliminar el registro de "${row.tool}" en "${row.site}"? Esta acción no se puede deshacer.`)
+      .subscribe((confirmed: boolean): void => {
+        if (!confirmed) {
+          return;
+        }
 
-    from(
-      this.supabaseService.client.from(SUPABASE_TABLE_ENUMERATION.INVENTORY).delete().eq('id', row.inventoryId)
-    ).subscribe((result: MutationResponseType): void => {
-      if (result.error) {
-        this.errorMessageSignal.set(
-          result.error.code === POSTGRES_ERROR_CODE_ENUMERATION.FOREIGN_KEY_VIOLATION
-            ? `No se puede eliminar "${row.tool}" en "${row.site}": tiene movimientos en el historial.`
-            : result.error.message
-        );
-        return;
-      }
+        from(
+          this.supabaseService.client.from(SUPABASE_TABLE_ENUMERATION.INVENTORY).delete().eq('id', row.inventoryId)
+        ).subscribe((result: MutationResponseType): void => {
+          if (result.error) {
+            this.errorMessageSignal.set(
+              result.error.code === POSTGRES_ERROR_CODE_ENUMERATION.FOREIGN_KEY_VIOLATION
+                ? `No se puede eliminar "${row.tool}" en "${row.site}": tiene movimientos en el historial.`
+                : result.error.message
+            );
+            return;
+          }
 
-      this.notificationService.success('Registro eliminado correctamente.');
-      this.loadRows();
-    });
+          this.notificationService.success('Registro eliminado correctamente.');
+          this.loadRows();
+        });
+      });
   }
 
   private loadRows(): void {

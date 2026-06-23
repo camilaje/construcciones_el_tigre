@@ -22,6 +22,7 @@
     "@angular/router": "^22.0.0",
     "@supabase/supabase-js": "^2.108.2",
     "rxjs": "~7.8.0",
+    "sweetalert2": "^11.26.25",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
