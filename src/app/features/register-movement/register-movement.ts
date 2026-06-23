@@ -3,6 +3,7 @@ import {
   AbstractControl,
   FormControl,
   FormGroup,
+  FormGroupDirective,
   ReactiveFormsModule,
   ValidationErrors,
   Validators
@@ -17,6 +18,7 @@ import { PostgrestError } from '@supabase/supabase-js';
 import { Observable, combineLatest, from } from 'rxjs';
 
 import { SupabaseService } from '../../core/supabase.service';
+import { NotificationService } from '../../core/notification.service';
 
 interface CatalogItem {
   id: string;
@@ -59,13 +61,13 @@ interface RegisterMovementFormControls {
 })
 export class RegisterMovement {
   private readonly supabaseService: SupabaseService;
+  private readonly notificationService: NotificationService;
   private readonly toolsSignal: WritableSignal<CatalogItem[]>;
   private readonly sitesSignal: WritableSignal<CatalogItem[]>;
   private readonly supervisorsSignal: WritableSignal<CatalogItem[]>;
   private readonly loadingCatalogsSignal: WritableSignal<boolean>;
   private readonly savingSignal: WritableSignal<boolean>;
   private readonly errorMessageSignal: WritableSignal<string | null>;
-  private readonly successMessageSignal: WritableSignal<string | null>;
 
   protected readonly form: FormGroup<RegisterMovementFormControls>;
   protected readonly tools: Signal<CatalogItem[]>;
@@ -74,17 +76,16 @@ export class RegisterMovement {
   protected readonly loadingCatalogs: Signal<boolean>;
   protected readonly saving: Signal<boolean>;
   protected readonly errorMessage: Signal<string | null>;
-  protected readonly successMessage: Signal<string | null>;
 
   constructor() {
     this.supabaseService = inject(SupabaseService);
+    this.notificationService = inject(NotificationService);
     this.toolsSignal = signal<CatalogItem[]>([]);
     this.sitesSignal = signal<CatalogItem[]>([]);
     this.supervisorsSignal = signal<CatalogItem[]>([]);
     this.loadingCatalogsSignal = signal<boolean>(true);
     this.savingSignal = signal<boolean>(false);
     this.errorMessageSignal = signal<string | null>(null);
-    this.successMessageSignal = signal<string | null>(null);
 
     this.tools = this.toolsSignal.asReadonly();
     this.sites = this.sitesSignal.asReadonly();
@@ -92,7 +93,6 @@ export class RegisterMovement {
     this.loadingCatalogs = this.loadingCatalogsSignal.asReadonly();
     this.saving = this.savingSignal.asReadonly();
     this.errorMessage = this.errorMessageSignal.asReadonly();
-    this.successMessage = this.successMessageSignal.asReadonly();
 
     this.form = new FormGroup<RegisterMovementFormControls>(
       {
@@ -111,7 +111,7 @@ export class RegisterMovement {
     this.loadCatalogs();
   }
 
-  protected submit(): void {
+  protected submit(formDirective: FormGroupDirective): void {
     if (this.form.invalid || this.savingSignal()) {
       return;
     }
@@ -127,7 +127,6 @@ export class RegisterMovement {
 
     this.savingSignal.set(true);
     this.errorMessageSignal.set(null);
-    this.successMessageSignal.set(null);
 
     from(
       this.supabaseService.client.rpc('transferir_herramienta', {
@@ -148,8 +147,8 @@ export class RegisterMovement {
         return;
       }
 
-      this.successMessageSignal.set('Traslado registrado correctamente.');
-      this.form.reset({
+      this.notificationService.success('Traslado registrado correctamente.');
+      formDirective.resetForm({
         toolId: '',
         sourceSiteId: '',
         destinationSiteId: '',

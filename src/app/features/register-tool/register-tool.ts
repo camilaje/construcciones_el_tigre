@@ -1,5 +1,5 @@
 import { Component, Signal, WritableSignal, inject, signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, FormGroup, FormGroupDirective, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,6 +10,7 @@ import { PostgrestError } from '@supabase/supabase-js';
 import { Observable, combineLatest, from } from 'rxjs';
 
 import { SupabaseService } from '../../core/supabase.service';
+import { NotificationService } from '../../core/notification.service';
 
 interface CatalogItem {
   id: string;
@@ -48,13 +49,13 @@ interface RegisterToolFormControls {
 })
 export class RegisterTool {
   private readonly supabaseService: SupabaseService;
+  private readonly notificationService: NotificationService;
   private readonly toolsSignal: WritableSignal<CatalogItem[]>;
   private readonly sitesSignal: WritableSignal<CatalogItem[]>;
   private readonly supervisorsSignal: WritableSignal<CatalogItem[]>;
   private readonly loadingCatalogsSignal: WritableSignal<boolean>;
   private readonly savingSignal: WritableSignal<boolean>;
   private readonly errorMessageSignal: WritableSignal<string | null>;
-  private readonly successMessageSignal: WritableSignal<string | null>;
 
   protected readonly form: FormGroup<RegisterToolFormControls>;
   protected readonly tools: Signal<CatalogItem[]>;
@@ -63,17 +64,16 @@ export class RegisterTool {
   protected readonly loadingCatalogs: Signal<boolean>;
   protected readonly saving: Signal<boolean>;
   protected readonly errorMessage: Signal<string | null>;
-  protected readonly successMessage: Signal<string | null>;
 
   constructor() {
     this.supabaseService = inject(SupabaseService);
+    this.notificationService = inject(NotificationService);
     this.toolsSignal = signal<CatalogItem[]>([]);
     this.sitesSignal = signal<CatalogItem[]>([]);
     this.supervisorsSignal = signal<CatalogItem[]>([]);
     this.loadingCatalogsSignal = signal<boolean>(true);
     this.savingSignal = signal<boolean>(false);
     this.errorMessageSignal = signal<string | null>(null);
-    this.successMessageSignal = signal<string | null>(null);
 
     this.tools = this.toolsSignal.asReadonly();
     this.sites = this.sitesSignal.asReadonly();
@@ -81,7 +81,6 @@ export class RegisterTool {
     this.loadingCatalogs = this.loadingCatalogsSignal.asReadonly();
     this.saving = this.savingSignal.asReadonly();
     this.errorMessage = this.errorMessageSignal.asReadonly();
-    this.successMessage = this.successMessageSignal.asReadonly();
 
     this.form = new FormGroup<RegisterToolFormControls>({
       toolId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -96,7 +95,7 @@ export class RegisterTool {
     this.loadCatalogs();
   }
 
-  protected submit(): void {
+  protected submit(formDirective: FormGroupDirective): void {
     if (this.form.invalid || this.savingSignal()) {
       return;
     }
@@ -108,7 +107,6 @@ export class RegisterTool {
 
     this.savingSignal.set(true);
     this.errorMessageSignal.set(null);
-    this.successMessageSignal.set(null);
 
     from(
       this.supabaseService.client.from('inventario_obra').insert({
@@ -129,8 +127,8 @@ export class RegisterTool {
         return;
       }
 
-      this.successMessageSignal.set('Herramienta registrada correctamente en la obra.');
-      this.form.reset({ toolId: '', siteId: '', initialQuantity: 1, supervisorId: null });
+      this.notificationService.success('Herramienta registrada correctamente en la obra.');
+      formDirective.resetForm({ toolId: '', siteId: '', initialQuantity: 1, supervisorId: null });
     });
   }
 

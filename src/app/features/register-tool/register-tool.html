@@ -6,7 +6,12 @@
       <mat-card-content>
         <h1 class="register-tool__title">Registrar herramienta nueva en obra</h1>
 
-        <form class="register-tool__form" [formGroup]="form" (ngSubmit)="submit()">
+        <form
+          class="register-tool__form"
+          [formGroup]="form"
+          (ngSubmit)="submit(formDirective)"
+          #formDirective="ngForm"
+        >
           <mat-form-field class="register-tool__field" appearance="outline">
             <mat-label>Herramienta</mat-label>
             <mat-select formControlName="toolId">
@@ -42,10 +47,6 @@
 
           @if (errorMessage()) {
             <p class="register-tool__error">{{ errorMessage() }}</p>
-          }
-
-          @if (successMessage()) {
-            <p class="register-tool__success">{{ successMessage() }}</p>
           }
 
           <button

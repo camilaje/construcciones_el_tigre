@@ -6,7 +6,12 @@
       <mat-card-content>
         <h1 class="register-movement__title">Registrar movimiento entre obras</h1>
 
-        <form class="register-movement__form" [formGroup]="form" (ngSubmit)="submit()">
+        <form
+          class="register-movement__form"
+          [formGroup]="form"
+          (ngSubmit)="submit(formDirective)"
+          #formDirective="ngForm"
+        >
           <mat-form-field class="register-movement__field" appearance="outline">
             <mat-label>Herramienta</mat-label>
             <mat-select formControlName="toolId">
@@ -75,10 +80,6 @@
 
           @if (errorMessage()) {
             <p class="register-movement__error">{{ errorMessage() }}</p>
-          }
-
-          @if (successMessage()) {
-            <p class="register-movement__success">{{ successMessage() }}</p>
           }
 
           <button

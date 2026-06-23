@@ -47,6 +47,13 @@ real en vez de fórmulas frágiles.
    *column aliasing* de PostgREST en cada `.select()` (`'site:obra, tool:herramienta'`), así la respuesta de
    Supabase ya llega con propiedades en inglés sin tocar la base de datos. Ver `register-tool.ts` o
    `inventory.ts` como referencia.
+7. **Mensajes de éxito en formularios van como toast**, vía `NotificationService.success(mensaje)`
+   (`core/notification.service.ts`, envuelve `MatSnackBar`, se autodescarta a los 5s) — no como texto inline
+   en la pantalla. Los mensajes de error sí se quedan inline (el usuario suele necesitar verlos mientras
+   corrige el formulario). Y al resetear un formulario después de un submit exitoso, usar
+   `formDirective.resetForm(valores)` (con `#formDirective="ngForm"` en el `<form>` y pasándolo a tu método
+   de submit) en vez de `this.form.reset(valores)` — `form.reset()` no limpia el flag `submitted` de
+   Angular, así que los campos requeridos vacíos se ven en rojo aunque el usuario no los haya tocado.
 
 Patrón de referencia (ver `src/app/core/auth.service.ts` o `src/app/features/login/login.ts`):
 
@@ -88,6 +95,7 @@ src/app/
     supabase.service.ts   # cliente único de Supabase (createClient), inyectable
     auth.service.ts        # estado de sesión (signals) + signIn/signOut (Observables)
     auth.guard.ts           # CanActivateFn: redirige a /login si no hay sesión
+    notification.service.ts # toast de éxito (MatSnackBar, autodesaparece a los 5s)
   shell/
     shell.ts                # layout con sidenav tipo hamburguesa (mode="over", oculto por
                              # defecto, botón ☰ en el toolbar) + logout
