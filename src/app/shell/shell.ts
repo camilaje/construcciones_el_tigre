@@ -42,7 +42,8 @@ export class Shell {
     this.navLinks = [
       { path: '/', label: 'Inicio', icon: 'home' },
       { path: '/inventory', label: 'Inventario por Obra', icon: 'inventory_2' },
-      { path: '/register-tool', label: 'Registrar herramienta nueva', icon: 'add_box' }
+      { path: '/register-tool', label: 'Registrar herramienta nueva', icon: 'add_box' },
+      { path: '/register-movement', label: 'Registrar movimiento', icon: 'sync_alt' }
     ];
   }
 

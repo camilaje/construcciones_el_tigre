@@ -5,6 +5,7 @@ import { Login } from './features/login/login';
 import { Home } from './features/home/home';
 import { Inventory } from './features/inventory/inventory';
 import { RegisterTool } from './features/register-tool/register-tool';
+import { RegisterMovement } from './features/register-movement/register-movement';
 
 export const routes: Routes = [
   { path: 'login', component: Login },
@@ -15,7 +16,8 @@ export const routes: Routes = [
     children: [
       { path: '', component: Home },
       { path: 'inventory', component: Inventory },
-      { path: 'register-tool', component: RegisterTool }
+      { path: 'register-tool', component: RegisterTool },
+      { path: 'register-movement', component: RegisterMovement }
     ]
   },
   { path: '**', redirectTo: '' }

@@ -1,0 +1,101 @@
+<div class="register-movement__page">
+  @if (loadingCatalogs()) {
+    <mat-spinner class="register-movement__spinner" diameter="32" />
+  } @else {
+    <mat-card class="register-movement__card">
+      <mat-card-content>
+        <h1 class="register-movement__title">Registrar movimiento entre obras</h1>
+
+        <form class="register-movement__form" [formGroup]="form" (ngSubmit)="submit()">
+          <mat-form-field class="register-movement__field" appearance="outline">
+            <mat-label>Herramienta</mat-label>
+            <mat-select formControlName="toolId">
+              @for (tool of tools(); track tool.id) {
+                <mat-option [value]="tool.id">{{ tool.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field class="register-movement__field" appearance="outline">
+            <mat-label>Obra de origen</mat-label>
+            <mat-select formControlName="sourceSiteId">
+              @for (site of sites(); track site.id) {
+                <mat-option [value]="site.id">{{ site.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field class="register-movement__field" appearance="outline">
+            <mat-label>Obra de destino</mat-label>
+            <mat-select formControlName="destinationSiteId">
+              @for (site of sites(); track site.id) {
+                <mat-option [value]="site.id">{{ site.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          @if (form.errors?.['sameSite']) {
+            <p class="register-movement__error">La obra de origen y destino deben ser diferentes.</p>
+          }
+
+          <mat-form-field class="register-movement__field" appearance="outline">
+            <mat-label>Cantidad</mat-label>
+            <input matInput type="number" formControlName="quantity" min="1" />
+          </mat-form-field>
+
+          <mat-form-field class="register-movement__field" appearance="outline">
+            <mat-label>Quien entrega</mat-label>
+            <mat-select formControlName="deliveredById">
+              <mat-option [value]="null">Sin especificar</mat-option>
+              @for (supervisor of supervisors(); track supervisor.id) {
+                <mat-option [value]="supervisor.id">{{ supervisor.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field class="register-movement__field" appearance="outline">
+            <mat-label>Quien recibe</mat-label>
+            <mat-select formControlName="receivedById">
+              <mat-option [value]="null">Sin especificar</mat-option>
+              @for (supervisor of supervisors(); track supervisor.id) {
+                <mat-option [value]="supervisor.id">{{ supervisor.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field class="register-movement__field" appearance="outline">
+            <mat-label>Fecha</mat-label>
+            <input matInput type="date" formControlName="date" />
+          </mat-form-field>
+
+          <mat-form-field class="register-movement__field" appearance="outline">
+            <mat-label>Observaciones</mat-label>
+            <textarea matInput formControlName="notes" rows="2"></textarea>
+          </mat-form-field>
+
+          @if (errorMessage()) {
+            <p class="register-movement__error">{{ errorMessage() }}</p>
+          }
+
+          @if (successMessage()) {
+            <p class="register-movement__success">{{ successMessage() }}</p>
+          }
+
+          <button
+            class="register-movement__submit"
+            mat-flat-button
+            color="primary"
+            type="submit"
+            [disabled]="form.invalid || saving()"
+          >
+            @if (saving()) {
+              <mat-spinner class="register-movement__submit-spinner" diameter="20" />
+            } @else {
+              Registrar traslado
+            }
+          </button>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

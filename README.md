@@ -95,8 +95,9 @@ src/app/
     home/                   # "Inicio": dashboard con conteos (herramientas/obras/encargados/etc.)
     inventory/               # "Inventario por Obra", lee la vista resumen_por_obra
     register-tool/           # "Registrar herramienta nueva en obra" (alta inicial)
+    register-movement/       # "Registrar movimiento" (traslado obra-a-obra), usa el RPC transferir_herramienta
   app.routes.ts             # '/login' público; '/' (Shell) protegida con authGuard, con
-                             # hijos '', 'inventory', 'register-tool'
+                             # hijos '', 'inventory', 'register-tool', 'register-movement'
 ```
 
 ### Base de datos (Supabase)
@@ -144,8 +145,10 @@ login funciona (ver Playwright más abajo).
   stock, unidades totales, movimientos) para que no se vea vacía al recargar.
 - ✅ Pantalla "Inventario por Obra" — lee `resumen_por_obra`, muestra estado vacío si no hay datos.
 - ✅ Pantalla "Registrar herramienta nueva en obra" (alta inicial) — inserta en `inventario_obra`.
-- ⬜ "Registrar movimiento/traslado" — pendiente (la función `transferir_herramienta` ya existe en la BD).
+- ✅ Pantalla "Registrar movimiento" — llama al RPC `transferir_herramienta`, valida que origen y destino
+  sean distintos, y muestra los mensajes de error del RPC (stock insuficiente, etc.) tal cual.
 - ⬜ Historial de movimientos, CRUD de catálogos, detalle de un registro de inventario — pendientes.
+- ⬜ Despliegue en Netlify — pendiente.
 
 Hay un usuario de prueba en Supabase Auth: `garciamorenojuancamilo526@gmail.com` (contraseña no documentada
 aquí por seguridad — está en el historial de chat de configuración inicial).
