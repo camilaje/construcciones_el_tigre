@@ -1,10 +1,18 @@
-import { Component, Signal, WritableSignal, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
+import {
+  ActivatedRouteSnapshot,
+  NavigationEnd,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet
+} from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { filter } from 'rxjs';
 
 import { APP_ROUTE_ENUMERATION, AuthService } from '../core';
 
@@ -13,6 +21,8 @@ interface NavLinkType {
   label: string;
   icon: string;
 }
+
+const DEFAULT_PAGE_TITLE_CONSTANTS = 'Control de Herramientas';
 
 @Component({
   selector: 'app-shell',
@@ -33,15 +43,31 @@ export class Shell {
   private readonly authService: AuthService;
   private readonly router: Router;
   private readonly sidenavOpenedSignal: WritableSignal<boolean>;
+  private readonly pageTitleSignal: WritableSignal<string>;
 
   protected readonly navLinks: NavLinkType[];
   protected readonly sidenavOpened: Signal<boolean>;
+  protected readonly pageTitle: Signal<string>;
+  protected readonly displayName: Signal<string | null>;
 
   constructor() {
     this.authService = inject(AuthService);
     this.router = inject(Router);
     this.sidenavOpenedSignal = signal<boolean>(false);
+    this.pageTitleSignal = signal<string>(this.resolvePageTitle());
+
     this.sidenavOpened = this.sidenavOpenedSignal.asReadonly();
+    this.pageTitle = this.pageTitleSignal.asReadonly();
+
+    this.displayName = computed((): string | null => {
+      const user = this.authService.session()?.user;
+      if (!user) {
+        return null;
+      }
+
+      const fullName: string | undefined = user.user_metadata?.['full_name'];
+      return fullName ?? user.email ?? null;
+    });
 
     this.navLinks = [
       { path: APP_ROUTE_ENUMERATION.HOME, label: 'Inicio', icon: 'home' },
@@ -53,6 +79,12 @@ export class Shell {
       { path: APP_ROUTE_ENUMERATION.CATALOG_SITES, label: 'Catálogo de obras', icon: 'location_city' },
       { path: APP_ROUTE_ENUMERATION.CATALOG_SUPERVISORS, label: 'Catálogo de encargados', icon: 'badge' }
     ];
+
+    this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd)).subscribe(
+      (): void => {
+        this.pageTitleSignal.set(this.resolvePageTitle());
+      }
+    );
   }
 
   protected toggleSidenav(): void {
@@ -71,5 +103,15 @@ export class Shell {
     this.authService.signOut().subscribe((): void => {
       this.router.navigateByUrl(APP_ROUTE_ENUMERATION.LOGIN);
     });
+  }
+
+  private resolvePageTitle(): string {
+    let route: ActivatedRouteSnapshot = this.router.routerState.snapshot.root;
+
+    while (route.firstChild) {
+      route = route.firstChild;
+    }
+
+    return (route.data['title'] as string | undefined) ?? DEFAULT_PAGE_TITLE_CONSTANTS;
   }
 }

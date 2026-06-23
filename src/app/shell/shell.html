@@ -31,8 +31,12 @@
       <button class="shell__menu-toggle" mat-icon-button (click)="toggleSidenav()">
         <mat-icon>menu</mat-icon>
       </button>
-      <span class="shell__toolbar-title">Control de Herramientas</span>
+      <img class="shell__toolbar-logo" src="/logo.png" alt="Construcciones El Tigre" />
+      <span class="shell__toolbar-title">{{ pageTitle() }}</span>
       <span class="shell__spacer"></span>
+      @if (displayName()) {
+        <span class="shell__user">{{ displayName() }}</span>
+      }
       <button class="shell__logout" mat-button (click)="logout()">Cerrar sesión</button>
     </mat-toolbar>
 

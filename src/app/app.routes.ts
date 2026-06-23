@@ -19,26 +19,57 @@ export const routes: Routes = [
     component: Shell,
     canActivate: [authGuard],
     children: [
-      { path: APP_ROUTE_ENUMERATION.HOME.slice(1), component: Home },
-      { path: APP_ROUTE_ENUMERATION.INVENTORY.slice(1), component: Inventory },
-      { path: `${APP_ROUTE_ENUMERATION.INVENTORY.slice(1)}/:id`, component: InventoryDetail },
-      { path: APP_ROUTE_ENUMERATION.REGISTER_TOOL.slice(1), component: RegisterTool },
-      { path: APP_ROUTE_ENUMERATION.REGISTER_MOVEMENT.slice(1), component: RegisterMovement },
-      { path: APP_ROUTE_ENUMERATION.MOVEMENT_HISTORY.slice(1), component: MovementHistory },
+      { path: APP_ROUTE_ENUMERATION.HOME.slice(1), component: Home, data: { title: 'Inicio' } },
+      { path: APP_ROUTE_ENUMERATION.INVENTORY.slice(1), component: Inventory, data: { title: 'Inventario por Obra' } },
+      {
+        path: `${APP_ROUTE_ENUMERATION.INVENTORY.slice(1)}/:id`,
+        component: InventoryDetail,
+        data: { title: 'Detalle de inventario' }
+      },
+      {
+        path: APP_ROUTE_ENUMERATION.REGISTER_TOOL.slice(1),
+        component: RegisterTool,
+        data: { title: 'Registrar herramienta nueva' }
+      },
+      {
+        path: APP_ROUTE_ENUMERATION.REGISTER_MOVEMENT.slice(1),
+        component: RegisterMovement,
+        data: { title: 'Registrar movimiento' }
+      },
+      {
+        path: APP_ROUTE_ENUMERATION.MOVEMENT_HISTORY.slice(1),
+        component: MovementHistory,
+        data: { title: 'Historial de movimientos' }
+      },
       {
         path: APP_ROUTE_ENUMERATION.CATALOG_TOOLS.slice(1),
         component: Catalog,
-        data: { table: SUPABASE_TABLE_ENUMERATION.TOOLS, label: 'Herramientas', singularLabel: 'Herramienta' }
+        data: {
+          title: 'Catálogo de herramientas',
+          table: SUPABASE_TABLE_ENUMERATION.TOOLS,
+          label: 'Herramientas',
+          singularLabel: 'Herramienta'
+        }
       },
       {
         path: APP_ROUTE_ENUMERATION.CATALOG_SITES.slice(1),
         component: Catalog,
-        data: { table: SUPABASE_TABLE_ENUMERATION.SITES, label: 'Obras', singularLabel: 'Obra' }
+        data: {
+          title: 'Catálogo de obras',
+          table: SUPABASE_TABLE_ENUMERATION.SITES,
+          label: 'Obras',
+          singularLabel: 'Obra'
+        }
       },
       {
         path: APP_ROUTE_ENUMERATION.CATALOG_SUPERVISORS.slice(1),
         component: Catalog,
-        data: { table: SUPABASE_TABLE_ENUMERATION.SUPERVISORS, label: 'Encargados', singularLabel: 'Encargado' }
+        data: {
+          title: 'Catálogo de encargados',
+          table: SUPABASE_TABLE_ENUMERATION.SUPERVISORS,
+          label: 'Encargados',
+          singularLabel: 'Encargado'
+        }
       }
     ]
   },

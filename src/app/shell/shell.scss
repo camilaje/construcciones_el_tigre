@@ -47,6 +47,17 @@
     flex: 0 0 auto;
   }
 
+  &__toolbar-logo {
+    width: 32px;
+    height: 32px;
+    margin-right: 0.75rem;
+    flex: 0 0 auto;
+
+    @media (max-width: 600px) {
+      display: none;
+    }
+  }
+
   &__toolbar-title {
     min-width: 0;
     overflow: hidden;
@@ -56,6 +67,20 @@
 
   &__spacer {
     flex: 1 1 auto;
+  }
+
+  &__user {
+    margin-right: 1rem;
+    font-size: 0.875rem;
+    color: #595959;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 200px;
+
+    @media (max-width: 600px) {
+      display: none;
+    }
   }
 
   &__logout {

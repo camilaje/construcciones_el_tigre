@@ -25,6 +25,15 @@ body {
   // user's system settings.
   color-scheme: light;
 
+  // Brand override: negro y blanco como colores principales, terracota como
+  // acento secundario (errores), aplicado a toda la app vía los tokens de
+  // sistema de Material 3 — no solo en el login.
+  --mat-sys-primary: #000000;
+  --mat-sys-on-primary: #ffffff;
+  --mat-sys-error: #b0492e;
+  --mat-sys-surface: #ffffff;
+  --mat-sys-on-surface: #000000;
+
   // Set a default background, font and text colors for the application using
   // Angular Material's system-level CSS variables. Learn more about these
   // variables at https://material.angular.dev/guide/system-variables
