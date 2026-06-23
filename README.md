@@ -191,8 +191,10 @@ login funciona (ver Playwright más abajo).
 - ✅ Toasts de éxito (`NotificationService`) en formularios, en vez de mensajes fijos en pantalla.
 - ✅ Pantalla "Historial de movimientos" — lee la vista `historial_movimientos`, solo lectura.
 - ✅ Strings/códigos repetidos centralizados en enums (`core/supabase-schema.ts`, `core/app-route.ts`).
-- ⬜ Detalle de un registro de inventario, editar/borrar en Inventario (encargado/registro sin
-  movimientos) — pendientes.
+- ✅ Editar/borrar en "Inventario por Obra" — reasignar encargado inline, y borrar un registro sin
+  movimientos asociados (bloqueado con mensaje claro si tiene historial, vía FK restrict). La
+  `cantidad_actual` sigue sin ser editable directamente, por diseño.
+- ⬜ Detalle de un registro de inventario (línea de tiempo de movimientos) — pendiente.
 - ⬜ Despliegue en Netlify — pendiente.
 
 Hay un usuario de prueba en Supabase Auth: `garciamorenojuancamilo526@gmail.com` (contraseña no documentada

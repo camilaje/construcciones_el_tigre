@@ -12,4 +12,12 @@
   &__error {
     color: var(--mat-sys-error);
   }
+
+  &__supervisor-select {
+    width: 160px;
+  }
+
+  &__action {
+    margin-right: 0.25rem;
+  }
 }
