@@ -4,8 +4,8 @@ import { CanActivateFn, Router, UrlTree } from '@angular/router';
 import { Session } from '@supabase/supabase-js';
 import { Observable, combineLatest, filter, map, take } from 'rxjs';
 
-import { AuthService } from './auth.service';
-import { APP_ROUTE_ENUMERATION } from './app-route';
+import { AuthService } from '../services/auth.service';
+import { APP_ROUTE_ENUMERATION } from '../app-route';
 
 export const authGuard: CanActivateFn = (): Observable<boolean | UrlTree> => {
   const auth: AuthService = inject(AuthService);

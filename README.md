@@ -72,12 +72,15 @@ real en vez de fórmulas frágiles.
      `_CONSTANTS` (constantes sueltas/agrupadas) — ej. `SUPABASE_TABLE_ENUMERATION`,
      `SUCCESS_TOAST_DURATION_MS_CONSTANTS`. Los **miembros** del enum también van en `UPPER_SNAKE_CASE`
      (`SUPABASE_TABLE_ENUMERATION.TOOLS`, no `.Tools`).
-11. **Barrels (`index.ts`)** en `core/`, `shell/`, cada subcarpeta de `features/`, y un `features/index.ts`
-    que reexporta todas las features. Cualquier import entre carpetas distintas pasa por el barrel más
-    cercano (`from '../../core'`, `from './features'`), nunca por la ruta del archivo (`from
-    '../../core/supabase.service'`). Excepción: los archivos **dentro** de `core/` se importan entre sí de
-    forma directa (ej. `auth.guard.ts` importa `./auth.service`, no `./index`), para evitar
-    auto-referenciar el propio barrel.
+11. **Barrels (`index.ts`)** en `core/`, `core/services/`, `core/guards/`, `shell/`, cada subcarpeta de
+    `features/`, y un `features/index.ts` que reexporta todas las features. `core/index.ts` reexporta
+    `./services` y `./guards`. Cualquier import entre carpetas distintas pasa por el barrel más cercano
+    (`from '../../core'`, `from './features'`), nunca por la ruta del archivo (`from
+    '../../core/services/supabase.service'`). Dentro de `core/`, `services/` agrupa los servicios
+    inyectables (Supabase, Auth, Notification, Confirmation) y `guards/` los route guards
+    (`CanActivateFn`) — cada uno con su propio `index.ts`. Excepción: los archivos **dentro** de esas
+    subcarpetas se importan entre sí de forma directa (ej. `auth.guard.ts` importa
+    `../services/auth.service`, no el barrel), para evitar auto-referenciar el propio barrel.
 
 Patrón de referencia (ver `src/app/core/auth.service.ts` o `src/app/features/login/login.ts`):
 
@@ -116,13 +119,15 @@ export class Ejemplo {
 ```
 src/app/
   core/
-    supabase.service.ts   # cliente único de Supabase (createClient), inyectable
-    auth.service.ts        # estado de sesión (signals) + signIn/signOut (Observables)
-    auth.guard.ts           # CanActivateFn: redirige a /login si no hay sesión
-    notification.service.ts # toast de éxito (MatSnackBar, autodesaparece a los 5s)
-    confirmation.service.ts # popup de confirmar/cancelar (SweetAlert2) para acciones destructivas
-    supabase-schema.ts      # enums: tablas/vista/RPC de Supabase, códigos de error de Postgres
-    app-route.ts            # enum APP_ROUTE_ENUMERATION con todas las rutas de la app
+    services/
+      supabase.service.ts    # cliente único de Supabase (createClient), inyectable
+      auth.service.ts        # estado de sesión (signals) + signIn/signOut (Observables)
+      notification.service.ts # toast de éxito (MatSnackBar, autodesaparece a los 5s)
+      confirmation.service.ts # popup de confirmar/cancelar (SweetAlert2) para acciones destructivas
+    guards/
+      auth.guard.ts          # CanActivateFn: redirige a /login si no hay sesión
+    supabase-schema.ts       # enums: tablas/vista/RPC de Supabase, códigos de error de Postgres
+    app-route.ts             # enum APP_ROUTE_ENUMERATION con todas las rutas de la app
   shell/
     shell.ts                # layout con sidenav tipo hamburguesa (mode="over", oculto por
                              # defecto, botón ☰ en el toolbar) + logout
