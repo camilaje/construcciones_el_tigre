@@ -89,7 +89,8 @@ src/app/
     auth.service.ts        # estado de sesión (signals) + signIn/signOut (Observables)
     auth.guard.ts           # CanActivateFn: redirige a /login si no hay sesión
   shell/
-    shell.ts                # layout con sidenav (menú de módulos) + toolbar + logout
+    shell.ts                # layout con sidenav tipo hamburguesa (mode="over", oculto por
+                             # defecto, botón ☰ en el toolbar) + logout
   features/
     login/                  # pantalla de login (Material + marca), pública
     home/                   # "Inicio": dashboard con conteos (herramientas/obras/encargados/etc.)

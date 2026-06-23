@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, Signal, WritableSignal, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -32,12 +32,16 @@ interface NavLink {
 export class Shell {
   private readonly authService: AuthService;
   private readonly router: Router;
+  private readonly sidenavOpenedSignal: WritableSignal<boolean>;
 
   protected readonly navLinks: NavLink[];
+  protected readonly sidenavOpened: Signal<boolean>;
 
   constructor() {
     this.authService = inject(AuthService);
     this.router = inject(Router);
+    this.sidenavOpenedSignal = signal<boolean>(false);
+    this.sidenavOpened = this.sidenavOpenedSignal.asReadonly();
 
     this.navLinks = [
       { path: '/', label: 'Inicio', icon: 'home' },
@@ -45,6 +49,18 @@ export class Shell {
       { path: '/register-tool', label: 'Registrar herramienta nueva', icon: 'add_box' },
       { path: '/register-movement', label: 'Registrar movimiento', icon: 'sync_alt' }
     ];
+  }
+
+  protected toggleSidenav(): void {
+    this.sidenavOpenedSignal.set(!this.sidenavOpenedSignal());
+  }
+
+  protected closeSidenav(): void {
+    this.sidenavOpenedSignal.set(false);
+  }
+
+  protected onSidenavOpenedChange(opened: boolean): void {
+    this.sidenavOpenedSignal.set(opened);
   }
 
   protected logout(): void {

@@ -1,7 +1,12 @@
 <mat-sidenav-container class="shell">
-  <mat-sidenav class="shell__sidenav" mode="side" [opened]="true">
+  <mat-sidenav
+    class="shell__sidenav"
+    mode="over"
+    [opened]="sidenavOpened()"
+    (openedChange)="onSidenavOpenedChange($event)"
+  >
     <div class="shell__brand">
-      <img class="shell__logo" src="/logo.png" alt="Construcciones El Tigre" />
+      <img class="shell__logo" src="/logo_negro.png" alt="Construcciones El Tigre" />
     </div>
 
     <mat-nav-list class="shell__nav-list">
@@ -12,6 +17,7 @@
           [routerLink]="link.path"
           routerLinkActive="shell__nav-link--active"
           [routerLinkActiveOptions]="{ exact: link.path === '/' }"
+          (click)="closeSidenav()"
         >
           <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
           <span matListItemTitle>{{ link.label }}</span>
@@ -22,6 +28,9 @@
 
   <mat-sidenav-content class="shell__content">
     <mat-toolbar color="primary" class="shell__toolbar">
+      <button class="shell__menu-toggle" mat-icon-button (click)="toggleSidenav()">
+        <mat-icon>menu</mat-icon>
+      </button>
       <span class="shell__toolbar-title">Control de Herramientas</span>
       <span class="shell__spacer"></span>
       <button class="shell__logout" mat-button (click)="logout()">Cerrar sesión</button>
