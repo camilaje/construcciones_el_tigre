@@ -49,6 +49,7 @@ export class Shell {
       { path: APP_ROUTE_ENUMERATION.INVENTORY, label: 'Inventario por Obra', icon: 'inventory_2' },
       { path: APP_ROUTE_ENUMERATION.REGISTER_TOOL, label: 'Registrar herramienta nueva', icon: 'add_box' },
       { path: APP_ROUTE_ENUMERATION.REGISTER_MOVEMENT, label: 'Registrar movimiento', icon: 'sync_alt' },
+      { path: APP_ROUTE_ENUMERATION.MOVEMENT_HISTORY, label: 'Historial de movimientos', icon: 'history' },
       { path: APP_ROUTE_ENUMERATION.CATALOG_TOOLS, label: 'Catálogo de herramientas', icon: 'construction' },
       { path: APP_ROUTE_ENUMERATION.CATALOG_SITES, label: 'Catálogo de obras', icon: 'location_city' },
       { path: APP_ROUTE_ENUMERATION.CATALOG_SUPERVISORS, label: 'Catálogo de encargados', icon: 'badge' }

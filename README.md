@@ -109,6 +109,8 @@ src/app/
     auth.service.ts        # estado de sesión (signals) + signIn/signOut (Observables)
     auth.guard.ts           # CanActivateFn: redirige a /login si no hay sesión
     notification.service.ts # toast de éxito (MatSnackBar, autodesaparece a los 5s)
+    supabase-schema.ts      # enums: tablas/vista/RPC de Supabase, códigos de error de Postgres
+    app-route.ts            # enum APP_ROUTE_ENUMERATION con todas las rutas de la app
   shell/
     shell.ts                # layout con sidenav tipo hamburguesa (mode="over", oculto por
                              # defecto, botón ☰ en el toolbar) + logout
@@ -118,10 +120,11 @@ src/app/
     inventory/               # "Inventario por Obra", lee la vista resumen_por_obra
     register-tool/           # "Registrar herramienta nueva en obra" (alta inicial)
     register-movement/       # "Registrar movimiento" (traslado obra-a-obra), usa el RPC transferir_herramienta
+    movement-history/        # "Historial de movimientos", lee la vista historial_movimientos
     catalog/                 # CRUD genérico (create/edit/delete por nombre), reusado en 3 rutas vía
                              # route data: catalogs/tools, catalogs/sites, catalogs/supervisors
   app.routes.ts             # '/login' público; '/' (Shell) protegida con authGuard, con
-                             # hijos '', 'inventory', 'register-tool', 'register-movement',
+                             # hijos '', 'inventory', 'register-tool', 'register-movement', 'movements',
                              # 'catalogs/tools', 'catalogs/sites', 'catalogs/supervisors'
 ```
 
@@ -143,9 +146,11 @@ SQL Editor del Dashboard (`supabase.com/dashboard/project/ngiegwgrljveitpwsinf/s
 valida stock en origen, crea el registro en destino si no existe, inserta el movimiento; un trigger recalcula
 `cantidad_actual` en ambos lados y genera el texto legible del movimiento.
 
-**Vista:** `resumen_por_obra` — reemplaza la hoja "Resumen_por_Obra" rota del Excel; agregación real, no
-fórmulas. Creada con `security_invoker = true` (si no, una vista quedaría con el owner `postgres`, que es
-superusuario, y se saltaría RLS de las tablas base sin que se note).
+**Vistas** (ambas con `security_invoker = true` — si no, quedarían con el owner `postgres`, que es
+superusuario, y se saltarían el RLS de las tablas base sin que se note):
+- `resumen_por_obra` — reemplaza la hoja "Resumen_por_Obra" rota del Excel; agregación real, no fórmulas.
+- `historial_movimientos` — resuelve nombres legibles (herramienta, obra origen/destino, quien
+  entrega/recibe) a partir de `movimientos` + `inventario_obra`, para la pantalla de historial.
 
 **RLS:** todas las tablas son `for all to authenticated using (true)` — sin acceso anónimo por diseño. Esto
 es intencional: sin sesión, ninguna pantalla puede leer ni escribir, lo cual ya se usó como prueba de que el
@@ -184,7 +189,10 @@ login funciona (ver Playwright más abajo).
 - ✅ CRUD de catálogos (Herramientas, Obras, Encargados) — `features/catalog/`, una sola pantalla
   reusada por route data, con manejo de error de nombre duplicado y de borrado bloqueado por FK.
 - ✅ Toasts de éxito (`NotificationService`) en formularios, en vez de mensajes fijos en pantalla.
-- ⬜ Historial de movimientos, detalle de un registro de inventario — pendientes.
+- ✅ Pantalla "Historial de movimientos" — lee la vista `historial_movimientos`, solo lectura.
+- ✅ Strings/códigos repetidos centralizados en enums (`core/supabase-schema.ts`, `core/app-route.ts`).
+- ⬜ Detalle de un registro de inventario, editar/borrar en Inventario (encargado/registro sin
+  movimientos) — pendientes.
 - ⬜ Despliegue en Netlify — pendiente.
 
 Hay un usuario de prueba en Supabase Auth: `garciamorenojuancamilo526@gmail.com` (contraseña no documentada

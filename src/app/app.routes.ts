@@ -8,6 +8,7 @@ import { Home } from './features/home/home';
 import { Inventory } from './features/inventory/inventory';
 import { RegisterTool } from './features/register-tool/register-tool';
 import { RegisterMovement } from './features/register-movement/register-movement';
+import { MovementHistory } from './features/movement-history/movement-history';
 import { Catalog } from './features/catalog/catalog';
 
 export const routes: Routes = [
@@ -21,6 +22,7 @@ export const routes: Routes = [
       { path: APP_ROUTE_ENUMERATION.INVENTORY.slice(1), component: Inventory },
       { path: APP_ROUTE_ENUMERATION.REGISTER_TOOL.slice(1), component: RegisterTool },
       { path: APP_ROUTE_ENUMERATION.REGISTER_MOVEMENT.slice(1), component: RegisterMovement },
+      { path: APP_ROUTE_ENUMERATION.MOVEMENT_HISTORY.slice(1), component: MovementHistory },
       {
         path: APP_ROUTE_ENUMERATION.CATALOG_TOOLS.slice(1),
         component: Catalog,
