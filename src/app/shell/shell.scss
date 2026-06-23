@@ -44,13 +44,29 @@
 
   &__menu-toggle {
     margin-right: 0.5rem;
+    flex: 0 0 auto;
+  }
+
+  &__toolbar-title {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   &__spacer {
     flex: 1 1 auto;
   }
 
+  &__logout {
+    flex: 0 0 auto;
+  }
+
   &__page {
     padding: 1.5rem;
+
+    @media (max-width: 600px) {
+      padding: 1rem;
+    }
   }
 }

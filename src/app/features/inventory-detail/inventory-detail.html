@@ -30,6 +30,7 @@
     @if (movements().length === 0) {
       <p class="inventory-detail__empty">Sin movimientos registrados para este registro.</p>
     } @else {
+      <div class="inventory-detail__table-wrapper">
       <table class="inventory-detail__table" mat-table [dataSource]="movements()">
         <ng-container matColumnDef="date">
           <th mat-header-cell *matHeaderCellDef>Fecha</th>
@@ -64,6 +65,7 @@
         <tr mat-header-row *matHeaderRowDef="columns"></tr>
         <tr mat-row *matRowDef="let row; columns: columns"></tr>
       </table>
+      </div>
     }
   }
 </div>

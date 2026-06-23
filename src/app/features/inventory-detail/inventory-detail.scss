@@ -30,6 +30,7 @@
 
   &__header-stats {
     display: flex;
+    flex-wrap: wrap;
     gap: 1.5rem;
     color: #595959;
     font-size: 0.875rem;
@@ -39,6 +40,10 @@
     margin: 0 0 1rem;
     font-size: 1.1rem;
     font-weight: 600;
+  }
+
+  &__table-wrapper {
+    overflow-x: auto;
   }
 
   &__table {

@@ -220,6 +220,9 @@ login funciona (ver Playwright más abajo).
   (`core/confirmation.service.ts`), en vez de `window.confirm()` nativo.
 - ✅ Filtros por Obra/Herramienta en "Inventario por Obra", y por Herramienta/Obra/rango de fecha en
   "Historial de movimientos" — client-side, vía `computed()` sobre las filas ya cargadas.
+- ✅ Responsive verificado en viewport móvil real (iPhone 12, 390px): título del toolbar trunca con
+  ellipsis en vez de superponerse al botón "Cerrar sesión"; las tablas (Inventario, Historial, Detalle)
+  van dentro de un contenedor con scroll horizontal propio en vez de desbordar la página.
 - ⬜ Despliegue en Netlify — config lista (`netlify.toml`), falta que conectes tu cuenta.
 
 Hay un usuario de prueba en Supabase Auth: `garciamorenojuancamilo526@gmail.com` (contraseña no documentada

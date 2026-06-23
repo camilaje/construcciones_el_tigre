@@ -35,6 +35,7 @@
     @if (filteredRows().length === 0) {
       <p class="inventory__empty">Ningún registro coincide con los filtros.</p>
     } @else {
+    <div class="inventory__table-wrapper">
     <table class="inventory__table" mat-table [dataSource]="filteredRows()">
       <ng-container matColumnDef="site">
         <th mat-header-cell *matHeaderCellDef>Obra</th>
@@ -103,6 +104,7 @@
       <tr mat-header-row *matHeaderRowDef="columns"></tr>
       <tr mat-row *matRowDef="let row; columns: columns"></tr>
     </table>
+    </div>
     }
   }
 </div>

@@ -43,6 +43,7 @@
     @if (filteredRows().length === 0) {
       <p class="movement-history__empty">Ningún movimiento coincide con los filtros.</p>
     } @else {
+      <div class="movement-history__table-wrapper">
       <table class="movement-history__table" mat-table [dataSource]="filteredRows()">
         <ng-container matColumnDef="date">
           <th mat-header-cell *matHeaderCellDef>Fecha</th>
@@ -82,6 +83,7 @@
         <tr mat-header-row *matHeaderRowDef="columns"></tr>
         <tr mat-row *matRowDef="let row; columns: columns"></tr>
       </table>
+      </div>
     }
   }
 </div>
