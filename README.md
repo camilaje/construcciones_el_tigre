@@ -115,8 +115,11 @@ export class Ejemplo {
 ## Identidad de marca
 
 - Logo en `public/logo.png` (negro sobre fondo blanco/transparente, para superficies claras — toolbar,
-  login) y `public/logo_negro.png` (blanco sobre fondo negro, para superficies oscuras — sidenav). Ambos ya
-  incluyen el texto "Construcciones El Tigre" — no lo dupliques en texto donde se muestre el logo.
+  login, favicon) y `public/logo_negro.png` (blanco sobre fondo negro, para superficies oscuras —
+  sidenav). Ambos ya incluyen el texto "Construcciones El Tigre" — no lo dupliques en texto donde se
+  muestre el logo.
+- Favicon: `index.html` apunta a `/logo.png` directamente como PNG (`<link rel="icon" type="image/png">`),
+  no al `favicon.ico` por defecto de Angular CLI — los navegadores modernos soportan PNG sin conversión.
 - Colores: **negro `#000000` y blanco `#ffffff`** como principales; **terracota `#B0492E`** como acento
   secundario únicamente (errores, hover), nunca como color dominante.
 - Los tokens de sistema de Material 3 (`--mat-sys-primary`, `--mat-sys-on-primary`, `--mat-sys-error`,
