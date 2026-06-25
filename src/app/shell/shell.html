@@ -37,7 +37,10 @@
       @if (displayName()) {
         <span class="shell__user">Hola, {{ displayName() }}</span>
       }
-      <button class="shell__logout" mat-button (click)="logout()">Cerrar sesión</button>
+      <button class="shell__logout" mat-button (click)="logout()" aria-label="Cerrar sesión">
+        <mat-icon class="shell__logout-icon">logout</mat-icon>
+        <span class="shell__logout-label">Cerrar sesión</span>
+      </button>
     </mat-toolbar>
 
     <main class="shell__page">

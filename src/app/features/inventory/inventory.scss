@@ -1,13 +1,98 @@
 .inventory {
-  &__table-wrapper {
-    overflow-x: auto;
-    overflow-y: hidden;
-    border-radius: 8px;
+  &__stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11.25rem, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+
+    @media (max-width: 600px) {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+  }
+
+  &__stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
     border: 1px solid rgba(0, 0, 0, 0.08);
   }
 
+  &__stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #000000;
+  }
+
+  &__stat-label {
+    color: #595959;
+    font-size: 0.8125rem;
+  }
+
+  &__table-wrapper {
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+
+    @media (max-width: 600px) {
+      overflow: visible;
+      border: none;
+    }
+  }
+
+  // Under 600px the native mat-table reflows from rows/columns into stacked
+  // cards (one per row): each <td> becomes a "label: value" line via its
+  // data-label attribute, so there's no horizontal scroll combined with the
+  // tall rows that long wrapped text (e.g. "Último movimiento") was causing.
   &__table {
     width: 100%;
+
+    @media (max-width: 600px) {
+      display: block;
+
+      // The CDK-injected <thead> wrapper itself isn't part of this component's
+      // template, so Angular's view-encapsulation attribute never lands on it
+      // and a `thead { ... }` selector here can never match it. The header
+      // <tr>/<th> elements inside it ARE from the template, so target those.
+      tr[mat-header-row] {
+        display: none;
+      }
+
+      tr {
+        display: block;
+        height: auto !important;
+        margin-bottom: 1rem;
+        padding: 0.75rem 1rem;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 0.5rem;
+      }
+
+      td {
+        display: flex;
+        width: 100%;
+        height: auto !important;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        text-align: right;
+
+        &::before {
+          content: attr(data-label);
+          font-weight: 600;
+          color: #595959;
+          text-align: left;
+        }
+
+        &:last-child {
+          border-bottom: none;
+        }
+      }
+    }
   }
 
   &__error {
@@ -15,8 +100,12 @@
   }
 
   &__supervisor-field {
-    width: 160px;
+    width: 10rem;
     margin: 0.5rem 0;
+
+    @media (max-width: 600px) {
+      width: 100%;
+    }
   }
 
   &__filters {
@@ -26,10 +115,18 @@
   }
 
   &__filter-field {
-    width: 220px;
+    width: 13.75rem;
   }
 
   &__action {
     margin-right: 0.25rem;
+  }
+
+  &__actions-cell {
+    @media (max-width: 600px) {
+      &::before {
+        display: none;
+      }
+    }
   }
 }

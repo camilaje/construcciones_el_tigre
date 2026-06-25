@@ -1,0 +1,29 @@
+// The host element itself always exists in the DOM (only its inner content is
+// conditional), so without this it would still occupy a slot in a parent flex
+// `gap` layout even with no message to show. `display: contents` makes the
+// host generate no box of its own.
+:host {
+  display: contents;
+}
+
+.error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--mat-sys-error);
+  background-color: rgba(176, 73, 46, 0.08);
+
+  &__icon {
+    flex: 0 0 auto;
+    color: var(--mat-sys-error);
+  }
+
+  &__text {
+    color: var(--mat-sys-error);
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+}

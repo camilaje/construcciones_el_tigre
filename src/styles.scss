@@ -34,6 +34,13 @@ body {
   --mat-sys-surface: #ffffff;
   --mat-sys-on-surface: #000000;
 
+  // Set semántico mínimo (docs/propuesta-paleta-colores.md): el error ya
+  // existía (terracota, arriba); estos tres son nuevos, para que "éxito" y
+  // "advertencia"/"información" dejen de compartir color con error/hover.
+  --app-color-success: #2e7d32;
+  --app-color-warning: #c9971e;
+  --app-color-info: #2563ac;
+
   // Set a default background, font and text colors for the application using
   // Angular Material's system-level CSS variables. Learn more about these
   // variables at https://material.angular.dev/guide/system-variables
@@ -45,4 +52,14 @@ body {
   margin: 0;
   height: 100%;
 }
+// Toast de éxito (NotificationService): se aplica vía panelClass, así que
+// tiene que ser un estilo global, no scoped al componente que lo dispara.
+.app-toast--success .mdc-snackbar__surface {
+  background-color: var(--app-color-success) !important;
+}
+
+.app-toast--success .mdc-snackbar__label {
+  color: #ffffff !important;
+}
+
 /* You can add global styles to this file, and also import other style files */

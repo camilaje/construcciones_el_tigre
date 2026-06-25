@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { FormControl, FormGroup, FormGroupDirective, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatTableModule } from '@angular/material/table';
@@ -18,6 +19,7 @@ import {
   SUPABASE_TABLE_ENUMERATION,
   SupabaseService
 } from '../../core';
+import { ErrorBanner } from '../../shared';
 
 interface CatalogRouteDataType {
   table: SUPABASE_TABLE_ENUMERATION;
@@ -48,11 +50,13 @@ interface NameFormControlsType {
   imports: [
     ReactiveFormsModule,
     MatButtonModule,
+    MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatTableModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    ErrorBanner
   ],
   templateUrl: './catalog.html',
   styleUrl: './catalog.scss'

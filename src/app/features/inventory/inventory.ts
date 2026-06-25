@@ -49,6 +49,11 @@ interface MutationResponseType {
   error: PostgrestError | null;
 }
 
+interface InventoryStatType {
+  label: string;
+  value: number;
+}
+
 @Component({
   selector: 'app-inventory',
   imports: [
@@ -89,6 +94,7 @@ export class Inventory {
   protected readonly siteOptions: Signal<string[]>;
   protected readonly toolOptions: Signal<string[]>;
   protected readonly filteredRows: Signal<SiteSummaryRowType[]>;
+  protected readonly stats: Signal<InventoryStatType[]>;
 
   constructor() {
     this.supabaseService = inject(SupabaseService);
@@ -122,6 +128,19 @@ export class Inventory {
       return this.rowsSignal().filter(
         (row: SiteSummaryRowType): boolean => (!site || row.site === site) && (!tool || row.tool === tool)
       );
+    });
+    this.stats = computed((): InventoryStatType[] => {
+      const rows: SiteSummaryRowType[] = this.rowsSignal();
+
+      return [
+        { label: 'Combinaciones registradas', value: rows.length },
+        {
+          label: 'Unidades totales',
+          value: rows.reduce((total: number, row: SiteSummaryRowType): number => total + row.currentQuantity, 0)
+        },
+        { label: 'Obras con inventario', value: this.uniqueSorted(rows.map((row): string => row.site)).length },
+        { label: 'Herramientas distintas', value: this.uniqueSorted(rows.map((row): string => row.tool)).length }
+      ];
     });
 
     this.loadRows();

@@ -24,6 +24,7 @@ import {
   SUPABASE_TABLE_ENUMERATION,
   SupabaseService
 } from '../../core';
+import { ErrorBanner } from '../../shared';
 
 interface CatalogItemType {
   id: string;
@@ -59,7 +60,8 @@ interface RegisterMovementFormControlsType {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    ErrorBanner
   ],
   templateUrl: './register-movement.html',
   styleUrl: './register-movement.scss'
@@ -168,6 +170,10 @@ export class RegisterMovement {
           notes: ''
         });
       });
+  }
+
+  protected sameSiteErrorMessage(): string | null {
+    return this.form.errors?.['sameSite'] ? 'La obra de origen y destino deben ser diferentes.' : null;
   }
 
   private validateDifferentSites(group: AbstractControl): ValidationErrors | null {

@@ -2,7 +2,7 @@
   height: 100dvh;
 
   &__sidenav {
-    width: 280px;
+    width: 17.5rem;
     background-color: #000000;
     color: #ffffff;
     display: flex;
@@ -19,7 +19,7 @@
 
   &__nav-link {
     height: auto;
-    min-height: 48px;
+    min-height: 3rem;
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
 
@@ -41,7 +41,7 @@
   }
 
   &__logo {
-    width: 96px;
+    width: 6rem;
     height: auto;
   }
 
@@ -56,8 +56,8 @@
   }
 
   &__toolbar-logo {
-    width: 32px;
-    height: 32px;
+    width: 2rem;
+    height: 2rem;
     margin-right: 0.75rem;
     flex: 0 0 auto;
 
@@ -84,7 +84,7 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    max-width: 200px;
+    max-width: 12.5rem;
 
     @media (max-width: 600px) {
       display: none;
@@ -93,9 +93,32 @@
 
   &__logout {
     flex: 0 0 auto;
+
+    @media (max-width: 600px) {
+      min-width: 0;
+      padding: 0 0.5rem;
+    }
+  }
+
+  &__logout-icon {
+    margin-right: 0.25rem;
+
+    @media (max-width: 600px) {
+      margin-right: 0;
+    }
+  }
+
+  &__logout-label {
+    @media (max-width: 600px) {
+      display: none;
+    }
   }
 
   &__page {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 68.75rem;
+    margin-inline: auto;
     padding: 1.5rem;
 
     @media (max-width: 600px) {

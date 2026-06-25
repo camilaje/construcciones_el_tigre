@@ -47,7 +47,12 @@ real en vez de fórmulas frágiles.
    las clases propias de Angular Material, escrito con **anidación de SCSS**: un único `.bloque { ... }` por
    archivo, con cada elemento como `&__elemento { ... }` dentro y cada modificador como `&--modificador`
    anidado dentro de su elemento (ver `shell.scss` para el caso con modificador). Nunca selectores planos
-   `.bloque__elemento { ... }` sueltos al nivel superior del archivo.
+   `.bloque__elemento { ... }` sueltos al nivel superior del archivo. **Unidades: `rem` para todo** (anchos,
+   altos, `max-width`, `border-radius`, gaps, paddings, font-sizes) — excepto los breakpoints de
+   `@media (max-width: ...)` y los `border: 1px solid` (bordes finos), que se quedan en `px` a propósito: un
+   breakpoint en `rem` da números poco legibles (`37.5rem` en vez de `600px`) y un borde de 1px en `rem` se
+   vuelve borroso o más grueso si el usuario cambia el zoom de texto del navegador, justo lo contrario de lo
+   que se busca con un borde fino.
 6. **Todo el código en inglés** (archivos, clases, interfaces, variables, métodos, nombres de rutas) — pero
    **no** el esquema de Supabase (tablas/columnas/RPC/vista siguen en español, ya desplegadas con datos
    reales) ni el texto visible para el usuario final (labels, botones, mensajes: siguen en español porque la
@@ -57,8 +62,9 @@ real en vez de fórmulas frágiles.
    `inventory.ts` como referencia.
 7. **Mensajes de éxito en formularios van como toast**, vía `NotificationService.success(mensaje)`
    (`core/notification.service.ts`, envuelve `MatSnackBar`, se autodescarta a los 5s) — no como texto inline
-   en la pantalla. Los mensajes de error sí se quedan inline (el usuario suele necesitar verlos mientras
-   corrige el formulario). Y al resetear un formulario después de un submit exitoso, usar
+   en la pantalla. Los mensajes de error sí se quedan inline, mediante `<app-error-banner [message]="..." />`
+   (`shared/error-banner/`, ver punto 11b) — el usuario suele necesitar verlos mientras corrige el
+   formulario. Y al resetear un formulario después de un submit exitoso, usar
    `formDirective.resetForm(valores)` (con `#formDirective="ngForm"` en el `<form>` y pasándolo a tu método
    de submit) en vez de `this.form.reset(valores)` — `form.reset()` no limpia el flag `submitted` de
    Angular, así que los campos requeridos vacíos se ven en rojo aunque el usuario no los haya tocado.
@@ -89,6 +95,15 @@ real en vez de fórmulas frágiles.
     (`CanActivateFn`) — cada uno con su propio `index.ts`. Excepción: los archivos **dentro** de esas
     subcarpetas se importan entre sí de forma directa (ej. `auth.guard.ts` importa
     `../services/auth.service`, no el barrel), para evitar auto-referenciar el propio barrel.
+11b. **Errores de formulario/reglas de negocio se muestran con `<app-error-banner [message]="..." />`**
+    (`shared/error-banner/`, sibling de `core/` y `features/` para componentes presentacionales reusables
+    entre features) en vez de un `<p>` suelto — ícono + fondo con tinte de error + borde, para que un error
+    real se note de un vistazo y no se confunda con texto normal. El componente usa `input()` (API basada en
+    signals) en vez de la inyección por constructor del resto del proyecto — excepción documentada: Angular
+    exige que sea un inicializador de campo para reconocerlo como input, no se puede asignar en el
+    constructor. El host del componente usa `display: contents` (`error-banner.scss`) porque el elemento
+    siempre existe en el DOM aunque no haya mensaje — sin eso, ocuparía un espacio vacío en el `gap` de
+    formularios flex incluso sin error que mostrar.
 
 Patrón de referencia (ver `src/app/core/auth.service.ts` o `src/app/features/login/login.ts`):
 
@@ -114,6 +129,10 @@ export class Ejemplo {
 
 ## Identidad de marca
 
+> 💡 Hay una propuesta de paleta de colores en revisión (no implementada) en
+> [`docs/propuesta-paleta-colores.md`](docs/propuesta-paleta-colores.md) — la sección de abajo describe lo
+> que está construido hoy.
+
 - Logo en `public/logo.png` (negro sobre fondo blanco/transparente, para superficies claras — toolbar,
   login, favicon) y `public/logo_negro.png` (blanco sobre fondo negro, para superficies oscuras —
   sidenav). Ambos ya incluyen el texto "Construcciones El Tigre" — no lo dupliques en texto donde se
@@ -122,6 +141,13 @@ export class Ejemplo {
   no al `favicon.ico` por defecto de Angular CLI — los navegadores modernos soportan PNG sin conversión.
 - Colores: **negro `#000000` y blanco `#ffffff`** como principales; **terracota `#B0492E`** como acento
   secundario únicamente (errores, hover), nunca como color dominante.
+- **Set semántico mínimo** (`src/styles.scss`, custom properties `--app-color-success: #2e7d32`,
+  `--app-color-warning: #c9971e`, `--app-color-info: #2563ac`; el error sigue siendo la terracota de
+  arriba) — para que "éxito" deje de compartir color con "error"/"hover". Hoy solo está aplicado al toast
+  de éxito (`NotificationService` pasa `panelClass: 'app-toast--success'`, estilizado en `styles.scss`
+  apuntando a `.mdc-snackbar__surface`/`.mdc-snackbar__label` con `!important` — Material no expone esos
+  tokens vía CSS variables en este punto, hay que pisar el color del elemento directamente). Advertencia e
+  información están definidos pero sin una superficie concreta todavía que los use.
 - Los tokens de sistema de Material 3 (`--mat-sys-primary`, `--mat-sys-on-primary`, `--mat-sys-error`,
   `--mat-sys-surface`, `--mat-sys-on-surface`) se sobreescriben **globalmente** en `body` (`src/styles.scss`),
   no solo en el login — así toda la app hereda negro/blanco/terracota en vez del azul por defecto de
@@ -157,6 +183,9 @@ src/app/
       auth.guard.ts          # CanActivateFn: redirige a /login si no hay sesión
     supabase-schema.ts       # enums: tablas/vista/RPC de Supabase, códigos de error de Postgres
     app-route.ts             # enum APP_ROUTE_ENUMERATION con todas las rutas de la app
+  shared/
+    error-banner/            # <app-error-banner [message]="...">, ícono + fondo con tinte de error,
+                              # para mensajes de validación/reglas de negocio en cualquier feature
   shell/
     shell.ts                # layout con sidenav tipo hamburguesa (mode="over", oculto por
                              # defecto, botón ☰ en el toolbar) + header dinámico (logo, título por
@@ -265,6 +294,25 @@ login funciona (ver Playwright más abajo).
   muestra info específica — herramienta y obra — que el header no tiene).
 - ✅ En "Inicio", los botones de acción rápida van antes que las tarjetas de estadísticas, y en mobile
   las tarjetas se acomodan en 2 columnas — así los botones quedan visibles sin necesidad de scroll.
+- ✅ Aprovechamiento de espacio en desktop: el contenedor de página (`shell.scss`, `&__page`) tiene
+  `max-width` y se centra, para que el contenido no quede pegado a la izquierda en monitores anchos. Las
+  pantallas de formulario (Login, Registrar herramienta, Registrar movimiento) muestran un panel lateral
+  con tips/contexto junto a la tarjeta; las de listado (Inventario, Historial, Catálogos) muestran una
+  franja de estadísticas reales (conteos ya calculados de los datos cargados, sin pedir nada nuevo a
+  Supabase) arriba de la tabla. Ambos paneles se ocultan bajo los 900px para no afectar el mobile, que ya
+  estaba resuelto.
+- ✅ Unidades de CSS unificadas en `rem` (ver convención 5 arriba) en todas las hojas de estilo del proyecto.
+- ✅ Auditoría mobile-first: las tablas de Inventario, Historial de movimientos y Detalle de inventario
+  (las que tienen muchas columnas) se reflujan a tarjetas apiladas bajo los 600px — cada `<td>` se muestra
+  como línea "etiqueta: valor" en vez de columna, eliminando el scroll horizontal combinado con filas
+  gigantes que generaba el texto largo (ej. "Último movimiento"). El botón "Cerrar sesión" del header
+  pasa a ser solo ícono bajo los 600px para darle más espacio al título de la página, que antes se
+  truncaba más agresivamente. Catálogos no necesitó el cambio (solo 2 columnas).
+- ✅ Set semántico mínimo de color (`--app-color-success`/`-warning`/`-info` en `src/styles.scss`) — por
+  ahora solo "éxito" tiene una superficie real (el toast verde de `NotificationService`).
+- ✅ Errores de formulario/reglas de negocio más visibles: `<app-error-banner>` (ícono + fondo con tinte +
+  borde) reemplaza el `<p>` de texto plano en Login, Registrar herramienta, Registrar movimiento y
+  Catálogos.
 - ✅ Desplegado en Netlify, conectado al repo de GitHub (auto-deploy en cada push a `main`) —
   **https://control-de-herramientas-el-tigre.netlify.app**. Verificado end-to-end contra producción: login, datos
   reales de Supabase, navegación profunda con refresh (`/catalogs/tools` recargado en el navegador no da

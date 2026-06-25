@@ -27,6 +27,11 @@ interface MovementHistoryResponseType {
   error: PostgrestError | null;
 }
 
+interface MovementHistoryStatType {
+  label: string;
+  value: number;
+}
+
 @Component({
   selector: 'app-movement-history',
   imports: [MatTableModule, MatProgressSpinnerModule, MatSelectModule, MatFormFieldModule, MatInputModule],
@@ -53,6 +58,7 @@ export class MovementHistory {
   protected readonly toolOptions: Signal<string[]>;
   protected readonly siteOptions: Signal<string[]>;
   protected readonly filteredRows: Signal<MovementHistoryRowType[]>;
+  protected readonly stats: Signal<MovementHistoryStatType[]>;
 
   constructor() {
     this.supabaseService = inject(SupabaseService);
@@ -89,6 +95,19 @@ export class MovementHistory {
         const matchesTo: boolean = !dateTo || row.date <= dateTo;
         return matchesTool && matchesSite && matchesFrom && matchesTo;
       });
+    });
+    this.stats = computed((): MovementHistoryStatType[] => {
+      const rows: MovementHistoryRowType[] = this.rowsSignal();
+
+      return [
+        { label: 'Movimientos registrados', value: rows.length },
+        {
+          label: 'Unidades trasladadas',
+          value: rows.reduce((total: number, row: MovementHistoryRowType): number => total + row.quantity, 0)
+        },
+        { label: 'Herramientas distintas', value: this.toolOptions().length },
+        { label: 'Obras involucradas', value: this.siteOptions().length }
+      ];
     });
 
     from(

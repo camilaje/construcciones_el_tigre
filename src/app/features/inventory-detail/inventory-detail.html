@@ -34,32 +34,32 @@
       <table class="inventory-detail__table" mat-table [dataSource]="movements()">
         <ng-container matColumnDef="date">
           <th mat-header-cell *matHeaderCellDef>Fecha</th>
-          <td mat-cell *matCellDef="let row">{{ row.date }}</td>
+          <td mat-cell *matCellDef="let row" data-label="Fecha">{{ row.date }}</td>
         </ng-container>
 
         <ng-container matColumnDef="route">
           <th mat-header-cell *matHeaderCellDef>Movimiento</th>
-          <td mat-cell *matCellDef="let row">{{ row.sourceSite }} → {{ row.destinationSite }}</td>
+          <td mat-cell *matCellDef="let row" data-label="Movimiento">{{ row.sourceSite }} → {{ row.destinationSite }}</td>
         </ng-container>
 
         <ng-container matColumnDef="quantity">
           <th mat-header-cell *matHeaderCellDef>Cantidad</th>
-          <td mat-cell *matCellDef="let row">{{ row.quantity }}</td>
+          <td mat-cell *matCellDef="let row" data-label="Cantidad">{{ row.quantity }}</td>
         </ng-container>
 
         <ng-container matColumnDef="deliveredBy">
           <th mat-header-cell *matHeaderCellDef>Quien entrega</th>
-          <td mat-cell *matCellDef="let row">{{ row.deliveredBy ?? '—' }}</td>
+          <td mat-cell *matCellDef="let row" data-label="Quien entrega">{{ row.deliveredBy ?? '—' }}</td>
         </ng-container>
 
         <ng-container matColumnDef="receivedBy">
           <th mat-header-cell *matHeaderCellDef>Quien recibe</th>
-          <td mat-cell *matCellDef="let row">{{ row.receivedBy ?? '—' }}</td>
+          <td mat-cell *matCellDef="let row" data-label="Quien recibe">{{ row.receivedBy ?? '—' }}</td>
         </ng-container>
 
         <ng-container matColumnDef="notes">
           <th mat-header-cell *matHeaderCellDef>Observaciones</th>
-          <td mat-cell *matCellDef="let row">{{ row.notes ?? '—' }}</td>
+          <td mat-cell *matCellDef="let row" data-label="Observaciones">{{ row.notes ?? '—' }}</td>
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="columns"></tr>

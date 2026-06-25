@@ -12,6 +12,9 @@ export class NotificationService {
   }
 
   public success(message: string): void {
-    this.snackBar.open(message, undefined, { duration: SUCCESS_TOAST_DURATION_MS_CONSTANTS });
+    this.snackBar.open(message, undefined, {
+      duration: SUCCESS_TOAST_DURATION_MS_CONSTANTS,
+      panelClass: 'app-toast--success'
+    });
   }
 }

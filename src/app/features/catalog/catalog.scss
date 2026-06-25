@@ -1,4 +1,16 @@
 .catalog {
+  &__page {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  &__main {
+    flex: 1 1 30rem;
+    min-width: 0;
+  }
+
   &__create-form {
     display: flex;
     align-items: flex-start;
@@ -8,13 +20,7 @@
 
   &__create-field {
     width: 100%;
-    max-width: 320px;
-  }
-
-  &__error {
-    margin: 0 0 1rem;
-    color: var(--mat-sys-error);
-    font-size: 0.875rem;
+    max-width: 20rem;
   }
 
   &__spinner {
@@ -24,9 +30,9 @@
   &__table-wrapper {
     overflow-x: auto;
     overflow-y: hidden;
-    border-radius: 8px;
+    border-radius: 0.5rem;
     border: 1px solid rgba(0, 0, 0, 0.08);
-    max-width: 480px;
+    max-width: 30rem;
   }
 
   &__table {
@@ -44,5 +50,40 @@
 
   &__action {
     margin-right: 0.25rem;
+  }
+
+  &__tips {
+    width: 100%;
+    max-width: 17.5rem;
+    background-color: #f5f5f5;
+
+    @media (max-width: 900px) {
+      display: none;
+    }
+  }
+
+  &__tips-count {
+    display: block;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #000000;
+  }
+
+  &__tips-count-label {
+    display: block;
+    color: #595959;
+    font-size: 0.8125rem;
+    margin-bottom: 1rem;
+  }
+
+  &__tips-list {
+    margin: 0;
+    padding-left: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    color: #595959;
+    font-size: 0.875rem;
+    line-height: 1.4;
   }
 }

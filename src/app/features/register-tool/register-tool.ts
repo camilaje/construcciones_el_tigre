@@ -16,6 +16,7 @@ import {
   SUPABASE_TABLE_ENUMERATION,
   SupabaseService
 } from '../../core';
+import { ErrorBanner } from '../../shared';
 
 interface CatalogItemType {
   id: string;
@@ -47,7 +48,8 @@ interface RegisterToolFormControlsType {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    ErrorBanner
   ],
   templateUrl: './register-tool.html',
   styleUrl: './register-tool.scss'

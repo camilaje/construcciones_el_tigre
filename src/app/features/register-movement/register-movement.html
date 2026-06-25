@@ -37,9 +37,7 @@
             </mat-select>
           </mat-form-field>
 
-          @if (form.errors?.['sameSite']) {
-            <p class="register-movement__error">La obra de origen y destino deben ser diferentes.</p>
-          }
+          <app-error-banner [message]="sameSiteErrorMessage()" />
 
           <mat-form-field class="register-movement__field" appearance="outline">
             <mat-label>Cantidad</mat-label>
@@ -76,9 +74,7 @@
             <textarea matInput formControlName="notes" rows="2"></textarea>
           </mat-form-field>
 
-          @if (errorMessage()) {
-            <p class="register-movement__error">{{ errorMessage() }}</p>
-          }
+          <app-error-banner [message]="errorMessage()" />
 
           <button
             class="register-movement__submit"
@@ -94,6 +90,20 @@
             }
           </button>
         </form>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="register-movement__tips">
+      <mat-card-content>
+        <h2 class="register-movement__tips-title">Antes de registrar</h2>
+        <ul class="register-movement__tips-list">
+          <li>
+            El traslado es una sola operación atómica: resta en la obra de origen y suma (o crea el registro)
+            en la obra de destino al mismo tiempo.
+          </li>
+          <li>Si la cantidad supera el stock disponible en la obra de origen, el sistema rechaza el traslado.</li>
+          <li>Quien entrega y quien recibe son opcionales, pero ayudan a mantener trazabilidad del historial.</li>
+        </ul>
       </mat-card-content>
     </mat-card>
   }

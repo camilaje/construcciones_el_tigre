@@ -8,6 +8,15 @@
   } @else if (rows().length === 0) {
     <p class="inventory__empty">No hay herramientas registradas todavía.</p>
   } @else {
+    <div class="inventory__stats-grid">
+      @for (stat of stats(); track stat.label) {
+        <div class="inventory__stat-card">
+          <span class="inventory__stat-value">{{ stat.value }}</span>
+          <span class="inventory__stat-label">{{ stat.label }}</span>
+        </div>
+      }
+    </div>
+
     <div class="inventory__filters">
       <mat-form-field class="inventory__filter-field" appearance="outline">
         <mat-label>Obra</mat-label>
@@ -37,22 +46,22 @@
     <table class="inventory__table" mat-table [dataSource]="filteredRows()">
       <ng-container matColumnDef="site">
         <th mat-header-cell *matHeaderCellDef>Obra</th>
-        <td mat-cell *matCellDef="let row">{{ row.site }}</td>
+        <td mat-cell *matCellDef="let row" data-label="Obra">{{ row.site }}</td>
       </ng-container>
 
       <ng-container matColumnDef="tool">
         <th mat-header-cell *matHeaderCellDef>Herramienta</th>
-        <td mat-cell *matCellDef="let row">{{ row.tool }}</td>
+        <td mat-cell *matCellDef="let row" data-label="Herramienta">{{ row.tool }}</td>
       </ng-container>
 
       <ng-container matColumnDef="currentQuantity">
         <th mat-header-cell *matHeaderCellDef>Cantidad</th>
-        <td mat-cell *matCellDef="let row">{{ row.currentQuantity }}</td>
+        <td mat-cell *matCellDef="let row" data-label="Cantidad">{{ row.currentQuantity }}</td>
       </ng-container>
 
       <ng-container matColumnDef="supervisor">
         <th mat-header-cell *matHeaderCellDef>Encargado</th>
-        <td mat-cell *matCellDef="let row">
+        <td mat-cell *matCellDef="let row" data-label="Encargado">
           @if (editingId() === row.inventoryId) {
             <mat-form-field class="inventory__supervisor-field" appearance="outline">
               <mat-select [formControl]="editSupervisorControl" placeholder="Sin encargado">
@@ -70,12 +79,12 @@
 
       <ng-container matColumnDef="lastMovement">
         <th mat-header-cell *matHeaderCellDef>Último movimiento</th>
-        <td mat-cell *matCellDef="let row">{{ row.lastMovement ?? '—' }}</td>
+        <td mat-cell *matCellDef="let row" data-label="Último movimiento">{{ row.lastMovement ?? '—' }}</td>
       </ng-container>
 
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef>Acciones</th>
-        <td mat-cell *matCellDef="let row">
+        <td mat-cell *matCellDef="let row" class="inventory__actions-cell" data-label="Acciones">
           @if (editingId() === row.inventoryId) {
             <button class="inventory__action" mat-icon-button type="button" (click)="saveSupervisor(row)">
               <mat-icon>check</mat-icon>

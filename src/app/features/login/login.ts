@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { APP_ROUTE_ENUMERATION, AuthService } from '../../core';
+import { ErrorBanner } from '../../shared';
 
 interface LoginFormControlsType {
   email: FormControl<string>;
@@ -23,7 +24,8 @@ interface LoginFormControlsType {
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    ErrorBanner
   ],
   templateUrl: './login.html',
   styleUrl: './login.scss'
