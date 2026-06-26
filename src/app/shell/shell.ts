@@ -92,6 +92,7 @@ export class Shell {
         icon: 'construction',
         links: [
           { path: APP_ROUTE_ENUMERATION.INVENTORY, label: 'Inventario', icon: 'inventory_2' },
+          { path: APP_ROUTE_ENUMERATION.REGISTER_TOOL, label: 'Registrar en obra', icon: 'add_box' },
           { path: APP_ROUTE_ENUMERATION.REGISTER_MOVEMENT, label: 'Registrar movimiento', icon: 'sync_alt' },
           { path: APP_ROUTE_ENUMERATION.MOVEMENT_HISTORY, label: 'Historial', icon: 'history' }
         ]
