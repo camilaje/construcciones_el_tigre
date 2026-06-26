@@ -3,7 +3,7 @@
 
   &__sidenav {
     width: 17.5rem;
-    background-color: #000000;
+    background-color: #4b4a45;
     color: #ffffff;
     display: flex;
     flex-direction: column;
@@ -13,7 +13,7 @@
     // set globally for light surfaces. Without this, Material's hover/state
     // styles (which fall back to --mat-sys-on-surface) render black text on
     // an already-black background and become invisible on hover.
-    --mat-sys-surface: #000000;
+    --mat-sys-surface: #4b4a45;
     --mat-sys-on-surface: #ffffff;
   }
 
@@ -80,7 +80,7 @@
   &__user {
     margin-right: 1rem;
     font-size: 0.875rem;
-    color: #595959;
+    color: #8b8a84;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;

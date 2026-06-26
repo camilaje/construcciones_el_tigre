@@ -28,16 +28,16 @@ body {
   // Brand override: negro y blanco como colores principales, terracota como
   // acento secundario (errores), aplicado a toda la app vía los tokens de
   // sistema de Material 3 — no solo en el login.
-  --mat-sys-primary: #000000;
+  --mat-sys-primary: #4b4a45;
   --mat-sys-on-primary: #ffffff;
   --mat-sys-error: #b0492e;
-  --mat-sys-surface: #ffffff;
-  --mat-sys-on-surface: #000000;
+  --mat-sys-surface: #f5f1ec;
+  --mat-sys-on-surface: #4b4a45;
 
   // Set semántico mínimo (docs/propuesta-paleta-colores.md): el error ya
   // existía (terracota, arriba); estos tres son nuevos, para que "éxito" y
   // "advertencia"/"información" dejen de compartir color con error/hover.
-  --app-color-success: #2e7d32;
+  --app-color-success: #5c7a4d;
   --app-color-warning: #c9971e;
   --app-color-info: #2563ac;
 

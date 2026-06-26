@@ -32,7 +32,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 1.5rem;
-    color: #595959;
+    color: #8b8a84;
     font-size: 0.875rem;
   }
 
@@ -90,7 +90,7 @@
         &::before {
           content: attr(data-label);
           font-weight: 600;
-          color: #595959;
+          color: #8b8a84;
           text-align: left;
         }
 

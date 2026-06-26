@@ -129,18 +129,22 @@ export class Ejemplo {
 
 ## Identidad de marca
 
-> 💡 Hay una propuesta de paleta de colores en revisión (no implementada) en
-> [`docs/propuesta-paleta-colores.md`](docs/propuesta-paleta-colores.md) — la sección de abajo describe lo
-> que está construido hoy.
+> 💡 Registro histórico de las opciones de paleta evaluadas:
+> [`docs/propuesta-paleta-colores.md`](docs/propuesta-paleta-colores.md). Opción C implementada el 2026-06-26.
 
 - Logo en `public/logo.png` (negro sobre fondo blanco/transparente, para superficies claras — toolbar,
-  login, favicon) y `public/logo_negro.png` (blanco sobre fondo negro, para superficies oscuras —
+  login, favicon) y `public/logo_negro.png` (blanco sobre fondo oscuro, para superficies oscuras —
   sidenav). Ambos ya incluyen el texto "Construcciones El Tigre" — no lo dupliques en texto donde se
   muestre el logo.
 - Favicon: `index.html` apunta a `/logo.png` directamente como PNG (`<link rel="icon" type="image/png">`),
   no al `favicon.ico` por defecto de Angular CLI — los navegadores modernos soportan PNG sin conversión.
-- Colores: **negro `#000000` y blanco `#ffffff`** como principales; **terracota `#B0492E`** como acento
-  secundario únicamente (errores, hover), nunca como color dominante.
+- **Paleta "Concreto y Tierra" (Opción C, implementada 2026-06-26):**
+  - Carbón cálido `#4b4a45` — texto principal, sidenav, botones primarios (`--mat-sys-primary`, `--mat-sys-on-surface`)
+  - Blanco cálido `#f5f1ec` — fondo de página y superficies (`--mat-sys-surface`)
+  - Arena `#e4ddd2` — tarjetas de stats, paneles de tips
+  - Terracota `#b0492e` — error y único acento visual (`--mat-sys-error`) — no usar para otros roles
+  - Gris cálido `#8b8a84` — texto secundario/muted (etiquetas, subtítulos)
+  - Verde musgo `#5c7a4d` — toast de éxito (`--app-color-success`)
 - **Set semántico mínimo** (`src/styles.scss`, custom properties `--app-color-success: #2e7d32`,
   `--app-color-warning: #c9971e`, `--app-color-info: #2563ac`; el error sigue siendo la terracota de
   arriba) — para que "éxito" deje de compartir color con "error"/"hover". Hoy solo está aplicado al toast

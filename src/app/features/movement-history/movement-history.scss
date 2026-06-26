@@ -17,17 +17,18 @@
     gap: 0.25rem;
     padding: 1rem;
     border-radius: 0.5rem;
+    background-color: #e4ddd2;
     border: 1px solid rgba(0, 0, 0, 0.08);
   }
 
   &__stat-value {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #000000;
+    color: #4b4a45;
   }
 
   &__stat-label {
-    color: #595959;
+    color: #8b8a84;
     font-size: 0.8125rem;
   }
 
@@ -79,7 +80,7 @@
         &::before {
           content: attr(data-label);
           font-weight: 600;
-          color: #595959;
+          color: #8b8a84;
           text-align: left;
         }
 

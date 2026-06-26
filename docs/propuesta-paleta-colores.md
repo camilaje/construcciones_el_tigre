@@ -1,8 +1,7 @@
 # Propuesta de paleta de colores (sin implementar)
 
-> **Estado: propuesta para revisar y decidir.** Nada de este documento está implementado en el código.
-> Cuando se elija una dirección, se actualiza `src/styles.scss` y la sección "Identidad de marca" del
-> `README.md`, y este documento puede archivarse o convertirse en el registro de la decisión final.
+> **Estado: Opción C implementada (2026-06-26).** La paleta "Concreto y Tierra" fue aplicada en
+> `src/styles.scss` y todos los SCSS de componentes. Este documento queda como registro de la decisión.
 
 ## Diagnóstico
 
