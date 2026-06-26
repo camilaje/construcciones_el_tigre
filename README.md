@@ -375,6 +375,96 @@ pide directamente):
 - `garciamorenojuancamilo526@gmail.com` — Juan Camilo (cuenta original de configuración/pruebas).
 - `paula.benjumeagrisa@gmail.com` — Paula.
 
+## Changelog
+
+### 2026-06-26 — Correcciones de UX y navegación
+
+- **Sidenav: alineación de ítems corregida.** `mat-list-item` sobreescribía el layout flex y colapsaba el
+  espacio entre ícono y texto. Se eliminó y se pasó a CSS puro (`display: flex`, `gap: 0.625rem`), con
+  tamaño de ícono uniforme en toda la nav.
+- **Link "Registrar en obra" recuperado en grupo Herramientas.** Había desaparecido al refactorizar el
+  sidenav a acordeón. Ambos grupos (Herramientas y Materiales) son ahora simétricos:
+  Inventario | Registrar en obra | Registrar movimiento | Historial.
+
+### 2026-06-26 — Módulo de materiales y alta inicial
+
+- **Alta inicial de materiales** (`/materials/register-initial`): primera vez que un material llega a una
+  obra o bodega — equivalente exacto de "Registrar herramienta en obra" para el módulo de materiales.
+- **Bug crítico corregido** (migración 040000): `inventario_material` no tenía `cantidad_inicial`. El trigger
+  de movimientos sobreescribía `cantidad_actual` a cero en el primer traslado. Se agregó la columna y se
+  actualizaron los triggers para que el cálculo sea `cantidad_inicial + entradas − salidas`, igual que en
+  `inventario_obra`.
+- **Dashboard de inicio reestructurado**: botones de acción agrupados por módulo (Herramientas / Materiales);
+  estadísticas independientes para cada uno (catálogo, inventario, unidades totales, movimientos).
+
+### 2026-06-26 — Módulo de materiales completo + sidenav por grupos
+
+- **Módulo de materiales**: tablas `materiales` / `inventario_material` / `movimientos_material`, RPC
+  `transferir_material`, 3 vistas (`resumen_materiales`, `resumen_por_obra_material`,
+  `historial_movimientos_material`). Pantallas: inventario, registrar movimiento e historial, con la misma
+  estructura y convenciones que las de herramientas.
+- **Sidenav refactorizado** de lista plana a acordeón colapsable con 3 grupos (Herramientas, Materiales,
+  Catálogos). El grupo que contiene la ruta activa se expande automáticamente.
+- **Catálogo de herramientas ampliado**: campo `cantidad_total` editable + columnas Total / En obras /
+  Disponible calculadas desde la vista `resumen_herramientas`.
+- **Catálogo de materiales**: ídem herramientas + campo `observaciones` libre opcional.
+- **Catálogo de obras ampliado**: toggle "Es bodega" por fila — diferencia entre obra activa y bodega sin
+  entidad separada (decisión del cliente; `es_bodega = true` hace que el stock cuente como disponible).
+
+### 2026-06-26 — Paleta de color y correcciones
+
+- **Paleta "Concreto y Tierra" (Opción C)** implementada globalmente: carbón cálido `#4b4a45`, blanco cálido
+  `#f5f1ec`, arena `#e4ddd2`, terracota `#b0492e`, gris `#8b8a84`, verde musgo `#5c7a4d`. Tokens de Material 3
+  sobreescritos en `body` para que toda la app herede la paleta sin pelear con `!important`.
+- **Bug de borrar movimientos corregido**: al eliminar un movimiento, los triggers recalculaban
+  `cantidad_actual` incorrectamente en algunos casos. Corregido con trigger `AFTER DELETE` que recalcula
+  ambos inventarios (origen y destino) a partir del historial restante.
+- **Cantidad total de herramientas**: columna `cantidad_total` en `herramientas` y vista `resumen_herramientas`
+  con los contadores Total / En obras / Disponible.
+
+### 2026-06-25 — Rediseño de páginas
+
+- **Rediseño visual** de todas las pantallas de listado y formulario: paneles de estadísticas en listados,
+  paneles de tips en formularios, mejor aprovechamiento del espacio en desktop, layout flex con `flex-wrap`
+  para adaptar en mobile sin breakpoints duros adicionales.
+
+### 2026-06-22 — Funcionalidad completa y despliegue a producción
+
+- **Despliegue en Netlify**: auto-deploy conectado al repo de GitHub. `netlify.toml` con redirect SPA para
+  que las rutas profundas no den 404 al recargar. Verificado end-to-end contra producción.
+- **Filtros** en "Inventario por Obra" (por obra y herramienta) y en "Historial de movimientos" (por
+  herramienta, obra y rango de fecha) — client-side via `computed()`, sin peticiones adicionales a Supabase.
+- **Detalle de inventario** (`/inventory/:id`): cabecera con herramienta, obra, cantidad y encargado, más
+  línea de tiempo de todos los movimientos donde esa obra es origen o destino.
+- **Editar / borrar en "Inventario por Obra"**: reasignar encargado inline; borrar un registro si no tiene
+  movimientos (bloqueado con mensaje claro vía FK restrict si tiene historial).
+- **Historial de movimientos** (`/movements`): vista de solo lectura + borrar con recalculo automático.
+- **CRUD de catálogos** (Herramientas, Obras, Encargados): una sola pantalla `features/catalog/` reusada
+  via route data. Maneja duplicado de nombre y borrado bloqueado por FK con mensajes específicos.
+- **Confirmaciones destructivas** con SweetAlert2 (`ConfirmationService`) en vez de `window.confirm()`.
+- **Toasts de éxito** vía `NotificationService` (MatSnackBar, 5 s), errores inline con `<app-error-banner>`.
+- **Responsive mobile** verificado en iPhone 12 (390 px): tablas con scroll horizontal propio, columnas
+  refluidas a tarjetas apiladas bajo 600 px, botón de logout reducido a ícono para dar espacio al título.
+- **Colores de marca globales** y header dinámico (logo + título por ruta + saludo con nombre del usuario).
+- **Barrels** (`index.ts`) en `core/`, `shell/` y cada feature; `features/index.ts` agregador.
+- **Enums centralizados** para tablas/vistas/RPC/rutas (`supabase-schema.ts`, `app-route.ts`) — sin strings
+  quemados en ningún componente.
+- **Favicon** como PNG directo (logo de la empresa), sin conversión a `.ico`.
+
+### 2026-06-22 — MVP inicial
+
+- Proyecto Angular 22 creado con Angular Material y cliente Supabase.
+- Esquema de base de datos: `herramientas`, `obras`, `encargados`, `inventario_obra`, `movimientos`;
+  función `transferir_herramienta`; vistas `resumen_por_obra` e `historial_movimientos`; RLS activado.
+- Auth con Supabase (email + password), guard de rutas, redirect a `/login` sin sesión.
+- Pantalla "Inventario por Obra" con datos reales desde Supabase.
+- Shell con sidenav hamburguesa, toolbar con logo y logout.
+- "Registrar herramienta en obra" (alta inicial en `inventario_obra`).
+- "Registrar movimiento" — traslado atómico vía RPC `transferir_herramienta`.
+- Dashboard "Inicio" con conteos reales para que no se vea vacía al cargar.
+
+---
+
 ## Cómo levantar el proyecto en local
 
 **Requisito:** Node.js ≥ 22.22.3 (o ≥24.15.0 / ≥26.x). Si `node --version` muestra algo menor, instala una
