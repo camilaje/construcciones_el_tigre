@@ -206,6 +206,7 @@ src/app/
     register-movement/       # "Registrar movimiento" (traslado obra-a-obra), usa el RPC transferir_herramienta
     movement-history/        # "Historial de movimientos", lee la vista historial_movimientos
     material-inventory/      # "Inventario de materiales", lee la vista resumen_por_obra_material
+    register-material-initial/ # "Registrar material en obra" (alta inicial), inserta en inventario_material
     register-material/       # "Registrar movimiento de material" (traslado), usa RPC transferir_material
     material-history/        # "Historial de movimientos de material", lee historial_movimientos_material
     catalog/                 # CRUD genérico configurable via route data: soporta campos opcionales
@@ -215,8 +216,9 @@ src/app/
   app.routes.ts             # '/login' público; '/' (Shell) protegida con authGuard, con hijos:
                              # '' (Home), 'inventory', 'inventory/:id', 'register-tool',
                              # 'register-movement', 'movements', 'materials/inventory',
-                             # 'materials/register', 'materials/history', 'catalogs/tools',
-                             # 'catalogs/materials', 'catalogs/sites', 'catalogs/supervisors'
+                             # 'materials/register-initial', 'materials/register',
+                             # 'materials/history', 'catalogs/tools', 'catalogs/materials',
+                             # 'catalogs/sites', 'catalogs/supervisors'
 ```
 
 ### Base de datos (Supabase)
@@ -235,7 +237,7 @@ SQL Editor del Dashboard (`supabase.com/dashboard/project/ngiegwgrljveitpwsinf/s
 | `inventario_obra` | Una fila por combinación Herramienta×Obra. `cantidad_inicial` se ingresa una sola vez; `cantidad_actual` se recalcula solo (trigger) |
 | `movimientos` | Historial de traslados de herramientas obra-a-obra |
 | `materiales` | Catálogo: nombre + `cantidad_total` + `observaciones` (campo libre de texto) |
-| `inventario_material` | Una fila por combinación Material×Obra. `cantidad_actual` se recalcula solo (trigger) |
+| `inventario_material` | Una fila por combinación Material×Obra. `cantidad_inicial` se ingresa una sola vez; `cantidad_actual` se recalcula solo (trigger insert + trigger delete + trigger after-insert) |
 | `movimientos_material` | Historial de traslados de materiales obra-a-obra |
 
 **Funciones RPC:**
@@ -350,6 +352,19 @@ login funciona (ver Playwright más abajo).
 - ✅ Catálogo de materiales: igual que herramientas + campo `observaciones` (texto libre opcional).
 - ✅ Catálogo de obras ampliado: toggle "Es bodega" por fila — marca una obra como bodega sin salir del
   catálogo. Las bodegas son obras regulares con `es_bodega = true` (decisión del cliente).
+- ✅ Alta inicial de materiales en obra (`register-material-initial/`, ruta `/materials/register-initial`) —
+  equivalente a "Registrar herramienta en obra" pero para materiales. Inserta directamente en
+  `inventario_material` con `cantidad_inicial`; un trigger recalcula `cantidad_actual` al insertar, y otro
+  al modificar/borrar movimientos, garantizando consistencia en todos los casos.
+- ✅ `inventario_material` tiene `cantidad_inicial` (migración 040000, aplicada 2026-06-26) — corrige el bug
+  donde el trigger de movimientos sobreescribía `cantidad_actual` a cero al primer traslado, ignorando el
+  stock ingresado en el alta inicial. Mismo modelo que `inventario_obra`.
+- ✅ Inicio reestructurado: botones de acción agrupados por módulo (Herramientas / Materiales), cada grupo con
+  acción primaria y secundarias. Estadísticas separadas para herramientas y materiales (catálogo, inventario,
+  unidades totales, movimientos).
+- ✅ Sidenav: grupos Herramientas y Materiales simétricos — ambos tienen Inventario | Registrar en obra |
+  Registrar movimiento | Historial. Alineación y espacio icono-texto corregidos eliminando `mat-list-item`
+  (que anulaba el layout flex) y usando CSS puro con `gap: 0.625rem`.
 - ✅ Desplegado en Netlify, conectado al repo de GitHub (auto-deploy en cada push a `main`) —
   **https://control-de-herramientas-el-tigre.netlify.app**. Verificado end-to-end contra producción: login, datos
   reales de Supabase, navegación profunda con refresh (`/catalogs/tools` recargado en el navegador no da
