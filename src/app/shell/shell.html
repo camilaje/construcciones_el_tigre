@@ -13,7 +13,6 @@
       <!-- Inicio -->
       <a
         class="shell__nav-link"
-        mat-list-item
         [routerLink]="homeLink.path"
         routerLinkActive="shell__nav-link--active"
         [routerLinkActiveOptions]="{ exact: true }"
@@ -40,7 +39,6 @@
             @for (link of group.links; track link.path) {
               <a
                 class="shell__nav-sublink"
-                mat-list-item
                 [routerLink]="link.path"
                 routerLinkActive="shell__nav-sublink--active"
                 [routerLinkActiveOptions]="{ exact: false }"
