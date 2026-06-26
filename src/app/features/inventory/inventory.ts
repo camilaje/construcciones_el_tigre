@@ -206,7 +206,7 @@ export class Inventory {
         if (result.error) {
           this.errorMessageSignal.set(
             result.error.code === POSTGRES_ERROR_CODE_ENUMERATION.FOREIGN_KEY_VIOLATION
-              ? `No se puede eliminar "${row.tool}" en "${row.site}": tiene movimientos en el historial.`
+              ? `"${row.tool}" en "${row.site}" tiene movimientos asociados. Elimínalos primero desde Historial de movimientos y luego podrás borrar este registro.`
               : result.error.message
           );
           return;

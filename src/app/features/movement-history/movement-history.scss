@@ -91,6 +91,14 @@
     }
   }
 
+  &__actions-cell {
+    @media (max-width: 600px) {
+      &::before {
+        display: none;
+      }
+    }
+  }
+
   &__error {
     color: var(--mat-sys-error);
   }

@@ -2,13 +2,21 @@ import { Component, DestroyRef, Signal, WritableSignal, computed, inject, signal
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatTableModule } from '@angular/material/table';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { PostgrestError } from '@supabase/supabase-js';
-import { from } from 'rxjs';
+import { Observable, filter, from, switchMap } from 'rxjs';
 
-import { SUPABASE_VIEW_ENUMERATION, SupabaseService } from '../../core';
+import {
+  ConfirmationService,
+  NotificationService,
+  SUPABASE_TABLE_ENUMERATION,
+  SUPABASE_VIEW_ENUMERATION,
+  SupabaseService
+} from '../../core';
 
 interface MovementHistoryRowType {
   id: string;
@@ -27,6 +35,10 @@ interface MovementHistoryResponseType {
   error: PostgrestError | null;
 }
 
+interface MutationResponseType {
+  error: PostgrestError | null;
+}
+
 interface MovementHistoryStatType {
   label: string;
   value: number;
@@ -34,12 +46,22 @@ interface MovementHistoryStatType {
 
 @Component({
   selector: 'app-movement-history',
-  imports: [MatTableModule, MatProgressSpinnerModule, MatSelectModule, MatFormFieldModule, MatInputModule],
+  imports: [
+    MatTableModule,
+    MatProgressSpinnerModule,
+    MatButtonModule,
+    MatIconModule,
+    MatSelectModule,
+    MatFormFieldModule,
+    MatInputModule
+  ],
   templateUrl: './movement-history.html',
   styleUrl: './movement-history.scss'
 })
 export class MovementHistory {
   private readonly supabaseService: SupabaseService;
+  private readonly confirmationService: ConfirmationService;
+  private readonly notificationService: NotificationService;
   private readonly destroyRef: DestroyRef;
   private readonly rowsSignal: WritableSignal<MovementHistoryRowType[]>;
   private readonly loadingSignal: WritableSignal<boolean>;
@@ -62,6 +84,8 @@ export class MovementHistory {
 
   constructor() {
     this.supabaseService = inject(SupabaseService);
+    this.confirmationService = inject(ConfirmationService);
+    this.notificationService = inject(NotificationService);
     this.destroyRef = inject(DestroyRef);
     this.rowsSignal = signal<MovementHistoryRowType[]>([]);
     this.loadingSignal = signal<boolean>(true);
@@ -71,7 +95,7 @@ export class MovementHistory {
     this.dateFromFilterSignal = signal<string | null>(null);
     this.dateToFilterSignal = signal<string | null>(null);
 
-    this.columns = ['date', 'tool', 'route', 'quantity', 'deliveredBy', 'receivedBy', 'notes'];
+    this.columns = ['date', 'tool', 'route', 'quantity', 'deliveredBy', 'receivedBy', 'notes', 'actions'];
     this.rows = this.rowsSignal.asReadonly();
     this.loading = this.loadingSignal.asReadonly();
     this.errorMessage = this.errorMessageSignal.asReadonly();
@@ -110,6 +134,51 @@ export class MovementHistory {
       ];
     });
 
+    this.loadRows();
+  }
+
+  protected onToolFilterChange(value: string | null): void {
+    this.toolFilterSignal.set(value);
+  }
+
+  protected onSiteFilterChange(value: string | null): void {
+    this.siteFilterSignal.set(value);
+  }
+
+  protected onDateFromFilterChange(value: string): void {
+    this.dateFromFilterSignal.set(value || null);
+  }
+
+  protected onDateToFilterChange(value: string): void {
+    this.dateToFilterSignal.set(value || null);
+  }
+
+  protected remove(row: MovementHistoryRowType): void {
+    this.confirmationService
+      .confirm(`¿Eliminar el movimiento de "${row.tool}" (${row.sourceSite} → ${row.destinationSite}, ${row.date})? Las cantidades de inventario se recalcularán automáticamente.`)
+      .pipe(
+        filter((confirmed: boolean): boolean => confirmed),
+        switchMap((): Observable<MutationResponseType> =>
+          from(
+            this.supabaseService.client.from(SUPABASE_TABLE_ENUMERATION.MOVEMENTS).delete().eq('id', row.id)
+          )
+        ),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((result: MutationResponseType): void => {
+        if (result.error) {
+          this.errorMessageSignal.set(result.error.message);
+          return;
+        }
+
+        this.notificationService.success('Movimiento eliminado y cantidades recalculadas.');
+        this.loadRows();
+      });
+  }
+
+  private loadRows(): void {
+    this.loadingSignal.set(true);
+
     from(
       this.supabaseService.client
         .from(SUPABASE_VIEW_ENUMERATION.MOVEMENT_HISTORY)
@@ -128,22 +197,6 @@ export class MovementHistory {
 
         this.rowsSignal.set(result.data ?? []);
       });
-  }
-
-  protected onToolFilterChange(value: string | null): void {
-    this.toolFilterSignal.set(value);
-  }
-
-  protected onSiteFilterChange(value: string | null): void {
-    this.siteFilterSignal.set(value);
-  }
-
-  protected onDateFromFilterChange(value: string): void {
-    this.dateFromFilterSignal.set(value || null);
-  }
-
-  protected onDateToFilterChange(value: string): void {
-    this.dateToFilterSignal.set(value || null);
   }
 
   private uniqueSorted(values: string[]): string[] {
