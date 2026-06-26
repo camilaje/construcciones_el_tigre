@@ -10,6 +10,7 @@ export enum APP_ROUTE_ENUMERATION {
   CATALOG_MATERIALS = '/catalogs/materials',
   MOVEMENT_HISTORY = '/movements',
   MATERIAL_INVENTORY = '/materials/inventory',
+  REGISTER_MATERIAL_INITIAL = '/materials/register-initial',
   REGISTER_MATERIAL = '/materials/register',
   MATERIAL_HISTORY = '/materials/history'
 }

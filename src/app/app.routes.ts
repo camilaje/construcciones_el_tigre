@@ -11,6 +11,7 @@ import {
   MovementHistory,
   Catalog,
   MaterialInventory,
+  RegisterMaterialInitial,
   RegisterMaterial,
   MaterialHistory
 } from './features';
@@ -52,6 +53,11 @@ export const routes: Routes = [
         path: APP_ROUTE_ENUMERATION.MATERIAL_INVENTORY.slice(1),
         component: MaterialInventory,
         data: { title: 'Inventario de materiales' }
+      },
+      {
+        path: APP_ROUTE_ENUMERATION.REGISTER_MATERIAL_INITIAL.slice(1),
+        component: RegisterMaterialInitial,
+        data: { title: 'Registrar material en obra' }
       },
       {
         path: APP_ROUTE_ENUMERATION.REGISTER_MATERIAL.slice(1),
