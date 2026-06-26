@@ -10,12 +10,20 @@
         <mat-label>Nuevo/a {{ singularLabel }}</mat-label>
         <input matInput formControlName="name" />
       </mat-form-field>
+
+      @if (hasQuantity) {
+        <mat-form-field class="catalog__create-quantity" appearance="outline">
+          <mat-label>Cantidad total</mat-label>
+          <input matInput type="number" min="0" [formControl]="createQuantityControl" />
+        </mat-form-field>
+      }
+
       <button
         class="catalog__create-submit"
         mat-flat-button
         color="primary"
         type="submit"
-        [disabled]="createForm.invalid || saving()"
+        [disabled]="createForm.invalid || (hasQuantity && createQuantityControl.invalid) || saving()"
       >
         Agregar
       </button>
@@ -28,16 +36,26 @@
     } @else if (items().length === 0) {
       <p class="catalog__empty">No hay {{ label.toLowerCase() }} registrados todavía.</p>
     } @else {
-      <div class="catalog__table-wrapper">
+      <div class="catalog__table-wrapper" [class.catalog__table-wrapper--wide]="hasQuantity">
         <table class="catalog__table" mat-table [dataSource]="items()">
+
+          <!-- Nombre -->
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef>Nombre</th>
             <td mat-cell *matCellDef="let item">
               @if (editingId() === item.id) {
                 <form class="catalog__edit-form" [formGroup]="editForm" (ngSubmit)="saveEdit(item)">
-                  <mat-form-field class="catalog__edit-field" appearance="outline">
-                    <input matInput formControlName="name" />
-                  </mat-form-field>
+                  <div class="catalog__edit-row">
+                    <mat-form-field class="catalog__edit-field" appearance="outline">
+                      <input matInput formControlName="name" />
+                    </mat-form-field>
+                    @if (hasQuantity) {
+                      <mat-form-field class="catalog__edit-quantity" appearance="outline">
+                        <mat-label>Cantidad total</mat-label>
+                        <input matInput type="number" min="0" [formControl]="editQuantityControl" />
+                      </mat-form-field>
+                    }
+                  </div>
                 </form>
               } @else {
                 {{ item.name }}
@@ -45,6 +63,60 @@
             </td>
           </ng-container>
 
+          <!-- Cantidad total (herramientas) -->
+          @if (hasQuantity) {
+            <ng-container matColumnDef="quantity">
+              <th mat-header-cell *matHeaderCellDef class="catalog__num-header">Total</th>
+              <td mat-cell *matCellDef="let item" class="catalog__num-cell">
+                @if (editingId() !== item.id) {
+                  {{ item.quantity }}
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="inSites">
+              <th mat-header-cell *matHeaderCellDef class="catalog__num-header">En obras</th>
+              <td mat-cell *matCellDef="let item" class="catalog__num-cell">
+                @if (editingId() !== item.id) {
+                  {{ item.inSites }}
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="available">
+              <th mat-header-cell *matHeaderCellDef class="catalog__num-header">Disponible</th>
+              <td mat-cell *matCellDef="let item" class="catalog__num-cell">
+                @if (editingId() !== item.id) {
+                  <span
+                    class="catalog__available"
+                    [class.catalog__available--low]="(item.available ?? 0) === 0"
+                  >{{ item.available }}</span>
+                }
+              </td>
+            </ng-container>
+          }
+
+          <!-- Bodega toggle (obras) -->
+          @if (hasBodega) {
+            <ng-container matColumnDef="bodega">
+              <th mat-header-cell *matHeaderCellDef>Tipo</th>
+              <td mat-cell *matCellDef="let item">
+                <button
+                  mat-stroked-button
+                  class="catalog__bodega-toggle"
+                  [class.catalog__bodega-toggle--active]="item.isBodega"
+                  [disabled]="togglingBodegaId() === item.id"
+                  (click)="toggleBodega(item)"
+                  [matTooltip]="item.isBodega ? 'Marcar como obra' : 'Marcar como bodega'"
+                >
+                  <mat-icon>{{ item.isBodega ? 'warehouse' : 'construction' }}</mat-icon>
+                  {{ item.isBodega ? 'Bodega' : 'Obra' }}
+                </button>
+              </td>
+            </ng-container>
+          }
+
+          <!-- Acciones -->
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef>Acciones</th>
             <td mat-cell *matCellDef="let item">
@@ -53,7 +125,7 @@
                   class="catalog__action"
                   mat-icon-button
                   type="button"
-                  [disabled]="editForm.invalid"
+                  [disabled]="editForm.invalid || (hasQuantity && editQuantityControl.invalid)"
                   (click)="saveEdit(item)"
                 >
                   <mat-icon>check</mat-icon>
@@ -86,6 +158,13 @@
         <span class="catalog__tips-count-label">{{ label.toLowerCase() }} registrados</span>
         <ul class="catalog__tips-list">
           <li>El nombre debe ser único dentro de este catálogo.</li>
+          @if (hasQuantity) {
+            <li>La <strong>cantidad total</strong> representa todas las unidades que posee la empresa. Las que están en obras activas se descuentan del disponible.</li>
+            <li>Las herramientas en bodegas se suman al disponible porque están en stock.</li>
+          }
+          @if (hasBodega) {
+            <li>Usa el botón de tipo para indicar si un lugar es una <strong>obra activa</strong> o una <strong>bodega</strong>. Las herramientas en bodega cuentan como disponibles.</li>
+          }
           <li>
             No puedes eliminar un/a {{ singularLabel.toLowerCase() }} que ya esté en uso en inventario o
             movimientos — el sistema lo bloquea automáticamente.

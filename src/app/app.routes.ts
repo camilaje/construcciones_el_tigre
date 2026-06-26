@@ -48,7 +48,8 @@ export const routes: Routes = [
           title: 'Catálogo de herramientas',
           table: SUPABASE_TABLE_ENUMERATION.TOOLS,
           label: 'Herramientas',
-          singularLabel: 'Herramienta'
+          singularLabel: 'Herramienta',
+          hasQuantity: true
         }
       },
       {
@@ -58,7 +59,8 @@ export const routes: Routes = [
           title: 'Catálogo de obras',
           table: SUPABASE_TABLE_ENUMERATION.SITES,
           label: 'Obras',
-          singularLabel: 'Obra'
+          singularLabel: 'Obra',
+          hasBodega: true
         }
       },
       {

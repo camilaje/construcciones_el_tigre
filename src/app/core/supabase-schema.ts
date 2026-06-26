@@ -8,7 +8,8 @@ export enum SUPABASE_TABLE_ENUMERATION {
 
 export enum SUPABASE_VIEW_ENUMERATION {
   SITE_SUMMARY = 'resumen_por_obra',
-  MOVEMENT_HISTORY = 'historial_movimientos'
+  MOVEMENT_HISTORY = 'historial_movimientos',
+  TOOL_SUMMARY = 'resumen_herramientas'
 }
 
 export enum SUPABASE_RPC_ENUMERATION {
