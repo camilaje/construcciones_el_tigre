@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { APP_ROUTE_ENUMERATION, SUPABASE_TABLE_ENUMERATION, authGuard } from './core';
+import { APP_ROUTE_ENUMERATION, SUPABASE_TABLE_ENUMERATION, SUPABASE_VIEW_ENUMERATION, authGuard } from './core';
 import { Shell } from './shell';
 import {
   Login,
@@ -9,7 +9,10 @@ import {
   RegisterTool,
   RegisterMovement,
   MovementHistory,
-  Catalog
+  Catalog,
+  MaterialInventory,
+  RegisterMaterial,
+  MaterialHistory
 } from './features';
 
 export const routes: Routes = [
@@ -20,6 +23,8 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: APP_ROUTE_ENUMERATION.HOME.slice(1), component: Home, data: { title: 'Inicio' } },
+
+      // Herramientas
       { path: APP_ROUTE_ENUMERATION.INVENTORY.slice(1), component: Inventory, data: { title: 'Inventario por Obra' } },
       {
         path: `${APP_ROUTE_ENUMERATION.INVENTORY.slice(1)}/:id`,
@@ -41,15 +46,48 @@ export const routes: Routes = [
         component: MovementHistory,
         data: { title: 'Historial de movimientos' }
       },
+
+      // Materiales
+      {
+        path: APP_ROUTE_ENUMERATION.MATERIAL_INVENTORY.slice(1),
+        component: MaterialInventory,
+        data: { title: 'Inventario de materiales' }
+      },
+      {
+        path: APP_ROUTE_ENUMERATION.REGISTER_MATERIAL.slice(1),
+        component: RegisterMaterial,
+        data: { title: 'Registrar movimiento de material' }
+      },
+      {
+        path: APP_ROUTE_ENUMERATION.MATERIAL_HISTORY.slice(1),
+        component: MaterialHistory,
+        data: { title: 'Historial de movimientos de material' }
+      },
+
+      // Catálogos
       {
         path: APP_ROUTE_ENUMERATION.CATALOG_TOOLS.slice(1),
         component: Catalog,
         data: {
           title: 'Catálogo de herramientas',
           table: SUPABASE_TABLE_ENUMERATION.TOOLS,
+          summaryView: SUPABASE_VIEW_ENUMERATION.TOOL_SUMMARY,
           label: 'Herramientas',
           singularLabel: 'Herramienta',
           hasQuantity: true
+        }
+      },
+      {
+        path: APP_ROUTE_ENUMERATION.CATALOG_MATERIALS.slice(1),
+        component: Catalog,
+        data: {
+          title: 'Catálogo de materiales',
+          table: SUPABASE_TABLE_ENUMERATION.MATERIALS,
+          summaryView: SUPABASE_VIEW_ENUMERATION.MATERIAL_SUMMARY,
+          label: 'Materiales',
+          singularLabel: 'Material',
+          hasQuantity: true,
+          hasObservations: true
         }
       },
       {

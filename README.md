@@ -193,7 +193,9 @@ src/app/
   shell/
     shell.ts                # layout con sidenav tipo hamburguesa (mode="over", oculto por
                              # defecto, botón ☰ en el toolbar) + header dinámico (logo, título por
-                             # ruta, nombre de usuario) + logout
+                             # ruta, nombre de usuario) + logout. La navegación está organizada en
+                             # grupos colapsables con mat-accordion (Inicio | Herramientas |
+                             # Materiales | Catálogos) — el grupo activo se expande automáticamente.
   features/
     login/                  # pantalla de login (Material + marca), pública
     home/                   # "Inicio": dashboard con conteos (herramientas/obras/encargados/etc.)
@@ -203,11 +205,18 @@ src/app/
     register-tool/           # "Registrar herramienta nueva en obra" (alta inicial)
     register-movement/       # "Registrar movimiento" (traslado obra-a-obra), usa el RPC transferir_herramienta
     movement-history/        # "Historial de movimientos", lee la vista historial_movimientos
-    catalog/                 # CRUD genérico (create/edit/delete por nombre), reusado en 3 rutas vía
-                             # route data: catalogs/tools, catalogs/sites, catalogs/supervisors
-  app.routes.ts             # '/login' público; '/' (Shell) protegida con authGuard, con
-                             # hijos '', 'inventory', 'register-tool', 'register-movement', 'movements',
-                             # 'catalogs/tools', 'catalogs/sites', 'catalogs/supervisors'
+    material-inventory/      # "Inventario de materiales", lee la vista resumen_por_obra_material
+    register-material/       # "Registrar movimiento de material" (traslado), usa RPC transferir_material
+    material-history/        # "Historial de movimientos de material", lee historial_movimientos_material
+    catalog/                 # CRUD genérico configurable via route data: soporta campos opcionales
+                             # hasQuantity (cantidad_total + summary view), hasBodega (toggle es_bodega),
+                             # hasObservations (campo libre). Reusado en 4 rutas:
+                             # catalogs/tools, catalogs/materials, catalogs/sites, catalogs/supervisors
+  app.routes.ts             # '/login' público; '/' (Shell) protegida con authGuard, con hijos:
+                             # '' (Home), 'inventory', 'inventory/:id', 'register-tool',
+                             # 'register-movement', 'movements', 'materials/inventory',
+                             # 'materials/register', 'materials/history', 'catalogs/tools',
+                             # 'catalogs/materials', 'catalogs/sites', 'catalogs/supervisors'
 ```
 
 ### Base de datos (Supabase)
@@ -220,19 +229,27 @@ SQL Editor del Dashboard (`supabase.com/dashboard/project/ngiegwgrljveitpwsinf/s
 
 | Tabla | Qué guarda |
 |---|---|
-| `herramientas`, `obras`, `encargados` | Catálogos simples (CRUD) |
+| `herramientas` | Catálogo: nombre + `cantidad_total` (total de unidades que existe en la empresa) |
+| `obras` | Catálogo: nombre + `es_bodega` (si es true, el stock ahí se cuenta como "disponible") |
+| `encargados` | Catálogo simple (solo nombre) |
 | `inventario_obra` | Una fila por combinación Herramienta×Obra. `cantidad_inicial` se ingresa una sola vez; `cantidad_actual` se recalcula solo (trigger) |
-| `movimientos` | Historial de traslados obra-a-obra (siempre tiene origen y destino — la primera llegada de una herramienta es un insert directo a `inventario_obra`, nunca pasa por aquí) |
+| `movimientos` | Historial de traslados de herramientas obra-a-obra |
+| `materiales` | Catálogo: nombre + `cantidad_total` + `observaciones` (campo libre de texto) |
+| `inventario_material` | Una fila por combinación Material×Obra. `cantidad_actual` se recalcula solo (trigger) |
+| `movimientos_material` | Historial de traslados de materiales obra-a-obra |
 
-**Función clave:** `transferir_herramienta(herramienta_id, obra_origen_id, obra_destino_id, cantidad, ...)` —
-valida stock en origen, crea el registro en destino si no existe, inserta el movimiento; un trigger recalcula
-`cantidad_actual` en ambos lados y genera el texto legible del movimiento.
+**Funciones RPC:**
+- `transferir_herramienta(herramienta_id, obra_origen_id, obra_destino_id, cantidad, ...)` — valida stock en
+  origen, crea el registro en destino si no existe, inserta el movimiento; trigger recalcula `cantidad_actual`.
+- `transferir_material(material_id, obra_origen_id, obra_destino_id, cantidad, ...)` — ídem para materiales.
 
-**Vistas** (ambas con `security_invoker = true` — si no, quedarían con el owner `postgres`, que es
-superusuario, y se saltarían el RLS de las tablas base sin que se note):
-- `resumen_por_obra` — reemplaza la hoja "Resumen_por_Obra" rota del Excel; agregación real, no fórmulas.
-- `historial_movimientos` — resuelve nombres legibles (herramienta, obra origen/destino, quien
-  entrega/recibe) a partir de `movimientos` + `inventario_obra`, para la pantalla de historial.
+**Vistas** (todas con `security_invoker = true` — sin esto quedarían con owner `postgres`, saltándose el RLS):
+- `resumen_por_obra` — agregación Herramienta×Obra con `cantidad_actual`, encargado y último movimiento.
+- `historial_movimientos` — resuelve nombres legibles para la pantalla de historial de herramientas.
+- `resumen_herramientas` — por herramienta: `cantidad_total`, `en_obras` (excluye `es_bodega=true`), `disponible`.
+- `resumen_materiales` — igual que la anterior pero para materiales.
+- `resumen_por_obra_material` — agregación Material×Obra con `cantidad_actual`, encargado y último movimiento.
+- `historial_movimientos_material` — resuelve nombres legibles para la pantalla de historial de materiales.
 
 **RLS:** todas las tablas son `for all to authenticated using (true)` — sin acceso anónimo por diseño. Esto
 es intencional: sin sesión, ninguna pantalla puede leer ni escribir, lo cual ya se usó como prueba de que el
@@ -240,20 +257,24 @@ login funciona (ver Playwright más abajo).
 
 ### Reglas de negocio que la app preserva
 
-1. Una herramienta puede existir repartida en varias obras a la vez, cada combinación con su propia cantidad.
+1. Una herramienta (o material) puede existir repartida en varias obras a la vez, cada combinación con su propia cantidad.
 2. Un traslado es una sola operación atómica (resta en origen + suma-o-creación en destino).
-3. El historial completo de movimientos debe ser reconstruible por herramienta/obra/tiempo.
+3. El historial completo de movimientos debe ser reconstruible por herramienta/material/obra/tiempo.
 4. La vista consolidada es una consulta agregada real, no una fórmula frágil.
-5. `cantidad_inicial` se ingresa una sola vez, al llegar la herramienta por primera vez a una obra.
+5. `cantidad_inicial` se ingresa una sola vez, al llegar la herramienta/material por primera vez a una obra.
+6. Una obra marcada como `es_bodega = true` es tratada como bodega: su stock cuenta como "disponible" en el resumen de herramientas, no como "en obras".
+7. `cantidad_total` en `herramientas` y `materiales` representa el total físico que tiene la empresa; `disponible = cantidad_total − en_obras`.
 
 ### Qué entidades son CRUD completo y cuáles no (decisión deliberada)
 
-- **Herramientas, Obras, Encargados** (catálogos): CRUD completo — create/read/update/delete vía
+- **Herramientas, Obras, Encargados, Materiales** (catálogos): CRUD completo — create/read/update/delete vía
   `features/catalog/`. No hay razón de negocio para restringirlo.
-- **Inventario (`inventario_obra`)**: solo lectura + alta inicial. `cantidad_actual` nunca se edita a mano
+- **Inventario (`inventario_obra`, `inventario_material`)**: solo lectura + alta inicial. `cantidad_actual` nunca se edita a mano
   (es justo el bug que el rediseño corrige) — la única forma de cambiarla es a través de un movimiento.
-- **Movimientos**: solo lectura + creación. Sin editar ni borrar — es el historial/auditoría; una
-  corrección se hace registrando un movimiento nuevo, no reescribiendo el pasado.
+- **Movimientos (`movimientos`, `movimientos_material`)**: creación + eliminación (sin edición). La eliminación
+  recalcula automáticamente `cantidad_actual` en los inventarios afectados (trigger AFTER DELETE). Se permite
+  borrar para corregir registros erróneos; la cantidad resultante queda siempre consistente con el historial
+  restante.
 
 ## Estado actual (qué está construido)
 
@@ -317,6 +338,18 @@ login funciona (ver Playwright más abajo).
 - ✅ Errores de formulario/reglas de negocio más visibles: `<app-error-banner>` (ícono + fondo con tinte +
   borde) reemplaza el `<p>` de texto plano en Login, Registrar herramienta, Registrar movimiento y
   Catálogos.
+- ✅ Sidenav refactorizado a grupos colapsables con `mat-accordion` (Inicio | Herramientas | Materiales |
+  Catálogos) — elimina la lista plana de 8 ítems y agrupa los módulos por dominio. El grupo que contiene
+  la ruta activa se expande automáticamente al navegar.
+- ✅ Módulo de materiales completo: inventario por obra (`material-inventory/`), registrar movimiento
+  (`register-material/`, usa RPC `transferir_material`), historial (`material-history/`). Las tres pantallas
+  siguen la misma estructura y convenciones que sus equivalentes de herramientas.
+- ✅ Catálogo de herramientas ampliado: campo `cantidad_total` editable + columnas "Total / En obras /
+  Disponible" calculadas desde la vista `resumen_herramientas`. Obras con `es_bodega = true` no cuentan
+  en "en obras", así que el stock en bodega se refleja como disponible.
+- ✅ Catálogo de materiales: igual que herramientas + campo `observaciones` (texto libre opcional).
+- ✅ Catálogo de obras ampliado: toggle "Es bodega" por fila — marca una obra como bodega sin salir del
+  catálogo. Las bodegas son obras regulares con `es_bodega = true` (decisión del cliente).
 - ✅ Desplegado en Netlify, conectado al repo de GitHub (auto-deploy en cada push a `main`) —
   **https://control-de-herramientas-el-tigre.netlify.app**. Verificado end-to-end contra producción: login, datos
   reales de Supabase, navegación profunda con refresh (`/catalogs/tools` recargado en el navegador no da

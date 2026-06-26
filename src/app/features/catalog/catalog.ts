@@ -25,10 +25,12 @@ import { ErrorBanner } from '../../shared';
 
 interface CatalogRouteDataType {
   table: SUPABASE_TABLE_ENUMERATION;
+  summaryView?: SUPABASE_VIEW_ENUMERATION;
   label: string;
   singularLabel: string;
   hasQuantity?: boolean;
   hasBodega?: boolean;
+  hasObservations?: boolean;
 }
 
 interface CatalogItemType {
@@ -38,6 +40,7 @@ interface CatalogItemType {
   inSites?: number;
   available?: number;
   isBodega?: boolean;
+  observations?: string;
 }
 
 interface CatalogResponseType {
@@ -76,6 +79,7 @@ export class Catalog {
   private readonly confirmationService: ConfirmationService;
   private readonly destroyRef: DestroyRef;
   private readonly table: SUPABASE_TABLE_ENUMERATION;
+  private readonly summaryView: SUPABASE_VIEW_ENUMERATION | null;
   private readonly itemsSignal: WritableSignal<CatalogItemType[]>;
   private readonly loadingSignal: WritableSignal<boolean>;
   private readonly errorMessageSignal: WritableSignal<string | null>;
@@ -87,6 +91,7 @@ export class Catalog {
   protected readonly singularLabel: string;
   protected readonly hasQuantity: boolean;
   protected readonly hasBodega: boolean;
+  protected readonly hasObservations: boolean;
   protected readonly columns: string[];
   protected readonly items: Signal<CatalogItemType[]>;
   protected readonly loading: Signal<boolean>;
@@ -98,6 +103,8 @@ export class Catalog {
   protected readonly editForm: FormGroup<NameFormControlsType>;
   protected readonly createQuantityControl: FormControl<number>;
   protected readonly editQuantityControl: FormControl<number>;
+  protected readonly createObservationsControl: FormControl<string>;
+  protected readonly editObservationsControl: FormControl<string>;
 
   constructor() {
     this.supabaseService = inject(SupabaseService);
@@ -107,10 +114,12 @@ export class Catalog {
 
     const routeData: CatalogRouteDataType = inject(ActivatedRoute).snapshot.data as CatalogRouteDataType;
     this.table = routeData.table;
+    this.summaryView = routeData.summaryView ?? null;
     this.label = routeData.label;
     this.singularLabel = routeData.singularLabel;
     this.hasQuantity = routeData.hasQuantity ?? false;
     this.hasBodega = routeData.hasBodega ?? false;
+    this.hasObservations = routeData.hasObservations ?? false;
 
     if (this.hasQuantity) {
       this.columns = ['name', 'quantity', 'inSites', 'available', 'actions'];
@@ -142,6 +151,8 @@ export class Catalog {
     });
     this.createQuantityControl = new FormControl<number>(0, { nonNullable: true, validators: [Validators.required, Validators.min(0)] });
     this.editQuantityControl = new FormControl<number>(0, { nonNullable: true, validators: [Validators.required, Validators.min(0)] });
+    this.createObservationsControl = new FormControl<string>('', { nonNullable: true });
+    this.editObservationsControl = new FormControl<string>('', { nonNullable: true });
 
     this.loadItems();
   }
@@ -162,6 +173,9 @@ export class Catalog {
     if (this.hasQuantity) {
       payload['cantidad_total'] = this.createQuantityControl.value;
     }
+    if (this.hasObservations) {
+      payload['observaciones'] = this.createObservationsControl.value.trim() || null;
+    }
 
     from(this.supabaseService.client.from(this.table).insert(payload))
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -176,6 +190,7 @@ export class Catalog {
         this.notificationService.success(`Se agregó "${name}" correctamente.`);
         formDirective.resetForm({ name: '' });
         this.createQuantityControl.reset(0);
+        this.createObservationsControl.reset('');
         this.loadItems();
       });
   }
@@ -184,6 +199,7 @@ export class Catalog {
     this.editingIdSignal.set(item.id);
     this.editForm.reset({ name: item.name });
     this.editQuantityControl.reset(item.quantity ?? 0);
+    this.editObservationsControl.reset(item.observations ?? '');
   }
 
   protected cancelEdit(): void {
@@ -202,6 +218,9 @@ export class Catalog {
     const payload: Record<string, unknown> = { nombre: name };
     if (this.hasQuantity) {
       payload['cantidad_total'] = this.editQuantityControl.value;
+    }
+    if (this.hasObservations) {
+      payload['observaciones'] = this.editObservationsControl.value.trim() || null;
     }
 
     from(this.supabaseService.client.from(this.table).update(payload).eq('id', item.id))
@@ -276,25 +295,22 @@ export class Catalog {
   private loadItems(): void {
     this.loadingSignal.set(true);
 
-    const query$ = this.hasQuantity
-      ? from(
-          this.supabaseService.client
-            .from(SUPABASE_VIEW_ENUMERATION.TOOL_SUMMARY)
-            .select('id, name:nombre, quantity:cantidad_total, inSites:en_obras, available:disponible')
-        )
-      : this.hasBodega
-        ? from(
-            this.supabaseService.client
-              .from(this.table)
-              .select('id, name:nombre, isBodega:es_bodega')
-              .order('nombre')
-          )
-        : from(
-            this.supabaseService.client
-              .from(this.table)
-              .select('id, name:nombre')
-              .order('nombre')
-          );
+    let selectFields = 'id, name:nombre';
+    if (this.hasQuantity) {
+      selectFields += ', quantity:cantidad_total, inSites:en_obras, available:disponible';
+    }
+    if (this.hasObservations) {
+      selectFields += ', observations:observaciones';
+    }
+    if (this.hasBodega) {
+      selectFields += ', isBodega:es_bodega';
+    }
+
+    const source: string = (this.hasQuantity && this.summaryView) ? this.summaryView : this.table;
+    const pgQuery = this.summaryView && this.hasQuantity
+      ? this.supabaseService.client.from(source).select(selectFields)
+      : this.supabaseService.client.from(source).select(selectFields).order('nombre');
+    const query$: Observable<CatalogResponseType> = from(pgQuery) as unknown as Observable<CatalogResponseType>;
 
     query$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result: CatalogResponseType): void => {
       this.loadingSignal.set(false);

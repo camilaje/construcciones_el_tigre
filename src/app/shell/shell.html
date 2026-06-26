@@ -9,21 +9,51 @@
       <img class="shell__logo" src="/logo_negro.png" alt="Construcciones El Tigre" />
     </div>
 
-    <mat-nav-list class="shell__nav-list">
-      @for (link of navLinks; track link.path) {
-        <a
-          class="shell__nav-link"
-          mat-list-item
-          [routerLink]="link.path"
-          routerLinkActive="shell__nav-link--active"
-          [routerLinkActiveOptions]="{ exact: link.path === '/' }"
-          (click)="closeSidenav()"
-        >
-          <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
-          <span matListItemTitle>{{ link.label }}</span>
-        </a>
-      }
-    </mat-nav-list>
+    <nav class="shell__nav">
+      <!-- Inicio -->
+      <a
+        class="shell__nav-link"
+        mat-list-item
+        [routerLink]="homeLink.path"
+        routerLinkActive="shell__nav-link--active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        (click)="closeSidenav()"
+      >
+        <mat-icon class="shell__nav-link-icon">{{ homeLink.icon }}</mat-icon>
+        <span class="shell__nav-link-label">{{ homeLink.label }}</span>
+      </a>
+
+      <!-- Grupos con submenús -->
+      <mat-accordion class="shell__accordion" [multi]="true">
+        @for (group of navGroups; track group.label) {
+          <mat-expansion-panel
+            class="shell__nav-group"
+            [expanded]="isGroupActive(group)"
+          >
+            <mat-expansion-panel-header class="shell__nav-group-header">
+              <mat-panel-title class="shell__nav-group-title">
+                <mat-icon class="shell__nav-group-icon">{{ group.icon }}</mat-icon>
+                {{ group.label }}
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            @for (link of group.links; track link.path) {
+              <a
+                class="shell__nav-sublink"
+                mat-list-item
+                [routerLink]="link.path"
+                routerLinkActive="shell__nav-sublink--active"
+                [routerLinkActiveOptions]="{ exact: false }"
+                (click)="closeSidenav()"
+              >
+                <mat-icon class="shell__nav-sublink-icon">{{ link.icon }}</mat-icon>
+                <span class="shell__nav-sublink-label">{{ link.label }}</span>
+              </a>
+            }
+          </mat-expansion-panel>
+        }
+      </mat-accordion>
+    </nav>
   </mat-sidenav>
 
   <mat-sidenav-content class="shell__content">

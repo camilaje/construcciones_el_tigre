@@ -6,15 +6,24 @@
       (ngSubmit)="create(formDirective)"
       #formDirective="ngForm"
     >
-      <mat-form-field class="catalog__create-field" appearance="outline">
-        <mat-label>Nuevo/a {{ singularLabel }}</mat-label>
-        <input matInput formControlName="name" />
-      </mat-form-field>
+      <div class="catalog__create-fields">
+        <mat-form-field class="catalog__create-field" appearance="outline">
+          <mat-label>Nuevo/a {{ singularLabel }}</mat-label>
+          <input matInput formControlName="name" />
+        </mat-form-field>
 
-      @if (hasQuantity) {
-        <mat-form-field class="catalog__create-quantity" appearance="outline">
-          <mat-label>Cantidad total</mat-label>
-          <input matInput type="number" min="0" [formControl]="createQuantityControl" />
+        @if (hasQuantity) {
+          <mat-form-field class="catalog__create-quantity" appearance="outline">
+            <mat-label>Cantidad total</mat-label>
+            <input matInput type="number" min="0" [formControl]="createQuantityControl" />
+          </mat-form-field>
+        }
+      </div>
+
+      @if (hasObservations) {
+        <mat-form-field class="catalog__create-observations" appearance="outline">
+          <mat-label>Observaciones</mat-label>
+          <textarea matInput [formControl]="createObservationsControl" rows="2"></textarea>
         </mat-form-field>
       }
 
@@ -44,26 +53,39 @@
             <th mat-header-cell *matHeaderCellDef>Nombre</th>
             <td mat-cell *matCellDef="let item">
               @if (editingId() === item.id) {
-                <form class="catalog__edit-form" [formGroup]="editForm" (ngSubmit)="saveEdit(item)">
-                  <div class="catalog__edit-row">
-                    <mat-form-field class="catalog__edit-field" appearance="outline">
-                      <input matInput formControlName="name" />
-                    </mat-form-field>
-                    @if (hasQuantity) {
-                      <mat-form-field class="catalog__edit-quantity" appearance="outline">
-                        <mat-label>Cantidad total</mat-label>
-                        <input matInput type="number" min="0" [formControl]="editQuantityControl" />
+                <div class="catalog__edit-block">
+                  <form class="catalog__edit-form" [formGroup]="editForm" (ngSubmit)="saveEdit(item)">
+                    <div class="catalog__edit-row">
+                      <mat-form-field class="catalog__edit-field" appearance="outline">
+                        <input matInput formControlName="name" />
+                      </mat-form-field>
+                      @if (hasQuantity) {
+                        <mat-form-field class="catalog__edit-quantity" appearance="outline">
+                          <mat-label>Cantidad total</mat-label>
+                          <input matInput type="number" min="0" [formControl]="editQuantityControl" />
+                        </mat-form-field>
+                      }
+                    </div>
+                    @if (hasObservations) {
+                      <mat-form-field class="catalog__edit-observations" appearance="outline">
+                        <mat-label>Observaciones</mat-label>
+                        <textarea matInput [formControl]="editObservationsControl" rows="2"></textarea>
                       </mat-form-field>
                     }
-                  </div>
-                </form>
+                  </form>
+                </div>
               } @else {
-                {{ item.name }}
+                <div class="catalog__name-block">
+                  <span>{{ item.name }}</span>
+                  @if (item.observations) {
+                    <span class="catalog__observations">{{ item.observations }}</span>
+                  }
+                </div>
               }
             </td>
           </ng-container>
 
-          <!-- Cantidad total (herramientas) -->
+          <!-- Cantidad total (herramientas / materiales) -->
           @if (hasQuantity) {
             <ng-container matColumnDef="quantity">
               <th mat-header-cell *matHeaderCellDef class="catalog__num-header">Total</th>
@@ -160,10 +182,10 @@
           <li>El nombre debe ser único dentro de este catálogo.</li>
           @if (hasQuantity) {
             <li>La <strong>cantidad total</strong> representa todas las unidades que posee la empresa. Las que están en obras activas se descuentan del disponible.</li>
-            <li>Las herramientas en bodegas se suman al disponible porque están en stock.</li>
+            <li>Las unidades en bodegas cuentan como disponibles porque están en stock.</li>
           }
           @if (hasBodega) {
-            <li>Usa el botón de tipo para indicar si un lugar es una <strong>obra activa</strong> o una <strong>bodega</strong>. Las herramientas en bodega cuentan como disponibles.</li>
+            <li>Usa el botón de tipo para indicar si un lugar es una <strong>obra activa</strong> o una <strong>bodega</strong>. Lo que está en bodega cuenta como disponible.</li>
           }
           <li>
             No puedes eliminar un/a {{ singularLabel.toLowerCase() }} que ya esté en uso en inventario o

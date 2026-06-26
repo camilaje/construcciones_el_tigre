@@ -1,0 +1,113 @@
+.material-history {
+  &__stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11.25rem, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+
+    @media (max-width: 600px) {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+  }
+
+  &__stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background-color: #e4ddd2;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  &__stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #4b4a45;
+  }
+
+  &__stat-label {
+    color: #8b8a84;
+    font-size: 0.8125rem;
+  }
+
+  &__table-wrapper {
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+
+    @media (max-width: 600px) {
+      overflow: visible;
+      border: none;
+    }
+  }
+
+  &__table {
+    width: 100%;
+
+    @media (max-width: 600px) {
+      display: block;
+
+      tr[mat-header-row] {
+        display: none;
+      }
+
+      tr {
+        display: block;
+        height: auto !important;
+        margin-bottom: 1rem;
+        padding: 0.75rem 1rem;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 0.5rem;
+      }
+
+      td {
+        display: flex;
+        width: 100%;
+        height: auto !important;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        text-align: right;
+
+        &::before {
+          content: attr(data-label);
+          font-weight: 600;
+          color: #8b8a84;
+          text-align: left;
+        }
+
+        &:last-child {
+          border-bottom: none;
+        }
+      }
+    }
+  }
+
+  &__actions-cell {
+    @media (max-width: 600px) {
+      &::before {
+        display: none;
+      }
+    }
+  }
+
+  &__error {
+    color: var(--mat-sys-error);
+  }
+
+  &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  &__filter-field {
+    width: 12.5rem;
+  }
+}
