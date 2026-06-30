@@ -21,7 +21,7 @@ real en vez de fórmulas frágiles.
 
 - **Angular 22** (standalone components, signals, control flow `@if`/`@for`)
 - **Angular Material** (Material 3 / system tokens vía `mat.theme()` en `src/styles.scss`)
-- **Supabase** (Postgres + Auth + PostgREST) — proyecto real: `ngiegwgrljveitpwsinf`
+- **Supabase** (Postgres + Auth + PostgREST + Edge Functions) — proyecto real: `ngiegwgrljveitpwsinf`
 - **RxJS** para todo el flujo asíncrono (ver convenciones abajo)
 - Desplegado en **Netlify** (gratuito) — **https://control-de-herramientas-el-tigre.netlify.app**
 
@@ -76,9 +76,10 @@ real en vez de fórmulas frágiles.
 9. **Nada de strings/códigos quemados que se repiten entre archivos.** Nombres de tabla/vista/RPC de
    Supabase y códigos de error de Postgres viven en `core/supabase-schema.ts`
    (`SUPABASE_TABLE_ENUMERATION`, `SUPABASE_VIEW_ENUMERATION`, `SUPABASE_RPC_ENUMERATION`,
-   `POSTGRES_ERROR_CODE_ENUMERATION`); las rutas de la app viven en `core/app-route.ts`
-   (`APP_ROUTE_ENUMERATION`). Todo `.from(...)`, `.rpc(...)`, `path`/`data` de rutas, `routerLink`,
-   `navigateByUrl` y comparación de `error.code` pasa por uno de estos enums, nunca por un literal.
+   `SUPABASE_EDGE_FUNCTION_ENUMERATION`, `APP_ROLE_ENUMERATION`, `POSTGRES_ERROR_CODE_ENUMERATION`);
+   las rutas de la app viven en `core/app-route.ts` (`APP_ROUTE_ENUMERATION`). Todo `.from(...)`, `.rpc(...)`,
+   `path`/`data` de rutas, `routerLink`, `navigateByUrl` y comparación de `error.code` pasa por uno de estos
+   enums, nunca por un literal.
 10. **Convención de nombres para tipos vs. enums/constantes** (distinta de la del punto 3, que es sobre
    modificadores de acceso):
    - Interfaces/type alias: PascalCase con sufijo `Type` (`CatalogItemType`, `NavLinkType`).
@@ -164,14 +165,8 @@ export class Ejemplo {
 - El header (`shell.html`) es el mismo en todas las pantallas protegidas: logo + **título dinámico según la
   ruta activa** (`route.data['title']`, resuelto en `Shell.resolvePageTitle()` escuchando
   `Router.events`/`NavigationEnd`) + saludo "Hola, {nombre}" con el usuario logueado
-  (`user.user_metadata['full_name']`, con fallback al correo si no se ha configurado) + botón de cerrar
-  sesión. Logo y nombre se ocultan en viewports angostos (`max-width: 600px`) para no chocar con el título
-  truncado.
-- **Usuarios nuevos no tienen `full_name` por defecto** — Supabase Auth no tiene ese campo al crear el
-  usuario desde el Dashboard, así que el header les muestra el correo hasta que alguien con la contraseña
-  de esa cuenta corra `supabase.auth.updateUser({ data: { full_name: '...' } })` (un script de una sola
-  vez, no hay pantalla de "editar perfil" — decisión deliberada: el equipo es chico, no vale la pena la
-  pantalla todavía).
+  (`user.user_metadata['full_name']`) + ícono de ajustes (⚙) + botón de cerrar sesión. Logo y nombre se
+  ocultan en viewports angostos (`max-width: 600px`) para no chocar con el título truncado.
 
 ## Arquitectura
 
@@ -180,12 +175,16 @@ src/app/
   core/
     services/
       supabase.service.ts    # cliente único de Supabase (createClient), inyectable
-      auth.service.ts        # estado de sesión (signals) + signIn/signOut (Observables)
+      auth.service.ts        # estado de sesión (signals) + signInWithUsername/changePassword/signOut
       notification.service.ts # toast de éxito (MatSnackBar, autodesaparece a los 5s)
       confirmation.service.ts # popup de confirmar/cancelar (SweetAlert2) para acciones destructivas
     guards/
       auth.guard.ts          # CanActivateFn: redirige a /login si no hay sesión
-    supabase-schema.ts       # enums: tablas/vista/RPC de Supabase, códigos de error de Postgres
+      role.guard.ts          # CanActivateFn factory: roleGuard(allowedRoles[]) — redirige a /home si
+                             # el rol del usuario no está en la lista permitida
+    supabase-schema.ts       # enums: SUPABASE_TABLE_ENUMERATION, SUPABASE_VIEW_ENUMERATION,
+                             # SUPABASE_RPC_ENUMERATION, SUPABASE_EDGE_FUNCTION_ENUMERATION,
+                             # APP_ROLE_ENUMERATION, POSTGRES_ERROR_CODE_ENUMERATION
     app-route.ts             # enum APP_ROUTE_ENUMERATION con todas las rutas de la app
   shared/
     error-banner/            # <app-error-banner [message]="...">, ícono + fondo con tinte de error,
@@ -193,11 +192,15 @@ src/app/
   shell/
     shell.ts                # layout con sidenav tipo hamburguesa (mode="over", oculto por
                              # defecto, botón ☰ en el toolbar) + header dinámico (logo, título por
-                             # ruta, nombre de usuario) + logout. La navegación está organizada en
-                             # grupos colapsables con mat-accordion (Inicio | Herramientas |
-                             # Materiales | Catálogos) — el grupo activo se expande automáticamente.
+                             # ruta, nombre de usuario, ícono ⚙ con menú "Cambiar contraseña",
+                             # logout). La navegación está organizada en grupos colapsables con
+                             # mat-accordion (Inicio | Usuarios | Herramientas | Materiales |
+                             # Catálogos) — el grupo activo se expande automáticamente. "Usuarios"
+                             # solo es visible para rol admin/super_admin.
+    change-password-dialog.ts # MatDialog: cambiar contraseña del usuario autenticado actual.
+                              # Verifica la contraseña actual antes de aplicar la nueva.
   features/
-    login/                  # pantalla de login (Material + marca), pública
+    login/                  # pantalla de login con campo "Nombre de usuario" (no email)
     home/                   # "Inicio": dashboard con conteos (herramientas/obras/encargados/etc.)
     inventory/               # "Inventario por Obra", lee la vista resumen_por_obra; editar encargado y
                              # borrar (si no tiene movimientos); link a inventory-detail por fila
@@ -213,12 +216,18 @@ src/app/
                              # hasQuantity (cantidad_total + summary view), hasBodega (toggle es_bodega),
                              # hasObservations (campo libre). Reusado en 4 rutas:
                              # catalogs/tools, catalogs/materials, catalogs/sites, catalogs/supervisors
+                             # Workers (rol worker) ven el catálogo en modo solo lectura (sin botones
+                             # de editar/borrar y sin columna de acciones).
+    user-management/         # "/admin/users" — protegida con roleGuard([admin, super_admin]).
+                             # Lista usuarios desde perfiles_usuario, crea y elimina vía Edge Function
+                             # manage-user. super_admin puede crear admins; admins solo crean workers.
   app.routes.ts             # '/login' público; '/' (Shell) protegida con authGuard, con hijos:
                              # '' (Home), 'inventory', 'inventory/:id', 'register-tool',
                              # 'register-movement', 'movements', 'materials/inventory',
                              # 'materials/register-initial', 'materials/register',
                              # 'materials/history', 'catalogs/tools', 'catalogs/materials',
-                             # 'catalogs/sites', 'catalogs/supervisors'
+                             # 'catalogs/sites', 'catalogs/supervisors',
+                             # 'admin/users' (roleGuard [admin, super_admin])
 ```
 
 ### Base de datos (Supabase)
@@ -239,11 +248,22 @@ SQL Editor del Dashboard (`supabase.com/dashboard/project/ngiegwgrljveitpwsinf/s
 | `materiales` | Catálogo: nombre + `cantidad_total` + `observaciones` (campo libre de texto) |
 | `inventario_material` | Una fila por combinación Material×Obra. `cantidad_inicial` se ingresa una sola vez; `cantidad_actual` se recalcula solo (trigger insert + trigger delete + trigger after-insert) |
 | `movimientos_material` | Historial de traslados de materiales obra-a-obra |
+| `perfiles_usuario` | Perfil de cada usuario: `user_id` (FK → auth.users), `role` (super_admin/admin/worker), `display_name`, `username` (login identifier, UNIQUE), `created_at` |
 
 **Funciones RPC:**
 - `transferir_herramienta(herramienta_id, obra_origen_id, obra_destino_id, cantidad, ...)` — valida stock en
   origen, crea el registro en destino si no existe, inserta el movimiento; trigger recalcula `cantidad_actual`.
 - `transferir_material(material_id, obra_origen_id, obra_destino_id, cantidad, ...)` — ídem para materiales.
+- `auth_role()` — devuelve el rol del usuario actual; lee el claim del JWT primero (rápido), cae a
+  `perfiles_usuario` como fallback (primer login tras una migración de roles).
+- `get_auth_email_by_username(p_username)` — SECURITY DEFINER; resuelve el email interno de auth.users a
+  partir del username. Usado por `AuthService.signInWithUsername()` en el login.
+
+**Edge Functions** (`supabase/functions/`):
+- `manage-user` — gestión de usuarios desde el frontend. Acciones: `create` (genera email sintético interno,
+  crea el auth user y el perfil), `delete`. Valida que el llamador sea admin/super_admin; los admins solo
+  pueden crear/eliminar workers; nadie puede crear/eliminar super_admins desde la app. Usa `service_role`
+  internamente (server-side) — el frontend solo envía el JWT del usuario autenticado.
 
 **Vistas** (todas con `security_invoker = true` — sin esto quedarían con owner `postgres`, saltándose el RLS):
 - `resumen_por_obra` — agregación Herramienta×Obra con `cantidad_actual`, encargado y último movimiento.
@@ -253,9 +273,13 @@ SQL Editor del Dashboard (`supabase.com/dashboard/project/ngiegwgrljveitpwsinf/s
 - `resumen_por_obra_material` — agregación Material×Obra con `cantidad_actual`, encargado y último movimiento.
 - `historial_movimientos_material` — resuelve nombres legibles para la pantalla de historial de materiales.
 
-**RLS:** todas las tablas son `for all to authenticated using (true)` — sin acceso anónimo por diseño. Esto
-es intencional: sin sesión, ninguna pantalla puede leer ni escribir, lo cual ya se usó como prueba de que el
-login funciona (ver Playwright más abajo).
+**RLS:** políticas granulares por operación y por rol en todas las tablas:
+- Catálogos (`herramientas`, `materiales`, `obras`, `encargados`) y inventarios: todos los autenticados
+  pueden SELECT e INSERT; solo `admin`/`super_admin` pueden UPDATE y DELETE.
+- Movimientos: todos los autenticados pueden SELECT e INSERT; solo `admin`/`super_admin` pueden DELETE.
+- `perfiles_usuario`: SELECT para todos los autenticados; INSERT/UPDATE/DELETE bloqueados desde PostgREST
+  (solo la Edge Function con `service_role` puede modificarlos).
+- El rol se determina con `auth_role()`, que lee primero el claim `role` del JWT y cae al DB como fallback.
 
 ### Reglas de negocio que la app preserva
 
@@ -266,25 +290,43 @@ login funciona (ver Playwright más abajo).
 5. `cantidad_inicial` se ingresa una sola vez, al llegar la herramienta/material por primera vez a una obra.
 6. Una obra marcada como `es_bodega = true` es tratada como bodega: su stock cuenta como "disponible" en el resumen de herramientas, no como "en obras".
 7. `cantidad_total` en `herramientas` y `materiales` representa el total físico que tiene la empresa; `disponible = cantidad_total − en_obras`.
+8. Los **workers** solo pueden crear registros (catálogos, altas iniciales, movimientos); no pueden editar ni eliminar nada.
+9. Los **admins** tienen acceso completo a la app y pueden crear/eliminar usuarios worker.
+10. Solo el **super_admin** puede crear/eliminar cuentas admin. No se pueden crear super_admins desde la app.
 
 ### Qué entidades son CRUD completo y cuáles no (decisión deliberada)
 
-- **Herramientas, Obras, Encargados, Materiales** (catálogos): CRUD completo — create/read/update/delete vía
-  `features/catalog/`. No hay razón de negocio para restringirlo.
+- **Herramientas, Obras, Encargados, Materiales** (catálogos): CRUD completo para admin/super_admin; solo
+  lectura + creación para workers.
 - **Inventario (`inventario_obra`, `inventario_material`)**: solo lectura + alta inicial. `cantidad_actual` nunca se edita a mano
   (es justo el bug que el rediseño corrige) — la única forma de cambiarla es a través de un movimiento.
 - **Movimientos (`movimientos`, `movimientos_material`)**: creación + eliminación (sin edición). La eliminación
   recalcula automáticamente `cantidad_actual` en los inventarios afectados (trigger AFTER DELETE). Se permite
   borrar para corregir registros erróneos; la cantidad resultante queda siempre consistente con el historial
-  restante.
+  restante. Workers pueden crear movimientos pero no eliminarlos.
 
 ## Estado actual (qué está construido)
 
 - ✅ Esquema completo de base de datos, aplicado al proyecto Supabase real, con seed del catálogo legacy
   (22 herramientas, 2 obras, 7 encargados).
-- ✅ Login (Supabase Auth, email+password) con marca aplicada.
-- ✅ Guard de rutas — sin sesión, todo redirige a `/login`.
-- ✅ Shell con sidenav (menú de módulos) y logout centralizado.
+- ✅ Login con nombre de usuario (no email). `AuthService.signInWithUsername()` llama al RPC
+  `get_auth_email_by_username` para resolver el email interno antes de autenticar.
+- ✅ Guard de rutas — sin sesión, todo redirige a `/login`. `roleGuard(allowedRoles)` para rutas con
+  restricción de rol (ej. `/admin/users` solo para admin/super_admin).
+- ✅ Sistema de roles (RBAC): 3 roles (`super_admin`, `admin`, `worker`) almacenados en `perfiles_usuario`
+  y sincronizados al JWT via trigger. El rol viaja en `app_metadata.role` del JWT y se lee como signal
+  (`authService.role()`) en toda la app.
+- ✅ Shell con sidenav (menú de módulos), header dinámico con saludo por nombre, ícono ⚙ que abre menú
+  "Cambiar contraseña" (MatDialog), y logout centralizado.
+- ✅ Cambio de contraseña: cualquier usuario autenticado puede cambiar su contraseña desde el ícono ⚙ en
+  el toolbar. Verifica la contraseña actual antes de aplicar la nueva.
+- ✅ Gestión de usuarios (`/admin/users`, solo admin/super_admin): lista, crea y elimina usuarios.
+  Los nuevos usuarios se crean con username + contraseña (sin correo); internamente se genera un email
+  sintético invisible. La Edge Function `manage-user` realiza las operaciones con `service_role`
+  server-side; el frontend solo envía el JWT del usuario autenticado.
+- ✅ Restricciones de rol en la UI: workers ven catálogos/inventarios/historial en modo solo lectura
+  (sin botones de editar/borrar, sin columna de acciones). El enlace "Usuarios" en el sidenav solo
+  aparece para admin/super_admin.
 - ✅ Pantalla "Inicio" — dashboard con conteos reales (herramientas, obras, encargados, combinaciones con
   stock, unidades totales, movimientos) para que no se vea vacía al recargar.
 - ✅ Pantalla "Inventario por Obra" — lee `resumen_por_obra`, muestra estado vacío si no hay datos.
@@ -370,12 +412,32 @@ login funciona (ver Playwright más abajo).
   reales de Supabase, navegación profunda con refresh (`/catalogs/tools` recargado en el navegador no da
   404, gracias al redirect SPA del `netlify.toml`), logout.
 
-Usuarios reales en Supabase Auth (contraseñas no documentadas aquí por seguridad — quien las necesite las
-pide directamente):
-- `garciamorenojuancamilo526@gmail.com` — Juan Camilo (cuenta original de configuración/pruebas).
-- `paula.benjumeagrisa@gmail.com` — Paula.
+Usuarios en Supabase Auth (contraseñas no documentadas aquí por seguridad — quien las necesite las pide directamente):
+- **Juan Camilo** (`super_admin`) — username de login: `Juan Camilo`
+- **Paula** (`admin`) — username de login: `Paula`
 
 ## Changelog
+
+### 2026-06-30 — RBAC, autenticación por username y gestión de usuarios
+
+- **Sistema de roles (RBAC)**: tabla `perfiles_usuario` con roles `super_admin`, `admin`, `worker`.
+  Trigger `sync_role_to_jwt` sincroniza el rol al JWT en cada cambio. Función `auth_role()` como fuente
+  de verdad para las políticas RLS.
+- **Políticas RLS granulares**: reemplazaron las políticas permisivas en las 8 tablas operativas.
+  Workers pueden SELECT e INSERT en todo; solo admin/super_admin pueden UPDATE, DELETE y eliminar movimientos.
+- **Autenticación por username**: el login pide "Nombre de usuario" en vez de correo. Internamente,
+  `get_auth_email_by_username()` (RPC SECURITY DEFINER) resuelve el email de auth.users a partir del username.
+  Los nuevos usuarios creados desde la app reciben un email sintético invisible (`timestamp.random@app.internal`).
+- **Edge Function `manage-user`**: crea y elimina usuarios vía `service_role` server-side. El frontend
+  nunca toca el `service_role` key — solo envía su JWT y la función valida rol antes de operar.
+- **Gestión de usuarios** (`/admin/users`): pantalla accesible solo para admin/super_admin. Permite crear
+  usuarios (username + contraseña + rol) y eliminarlos con confirmación. Tabla renombrada a
+  `perfiles_usuario` para mantener la convención de nombres en español.
+- **Cambio de contraseña**: ícono ⚙ en el toolbar abre un MatMenu con "Cambiar contraseña". El dialog
+  verifica la contraseña actual antes de aplicar la nueva (`re-auth + updateUser`).
+- **Restricciones de rol en la UI**: workers ven todos los módulos en modo solo lectura (sin acciones de
+  editar/borrar). El enlace "Usuarios" en el sidenav solo aparece para admin/super_admin.
+- **`roleGuard(allowedRoles)`**: guard factory reutilizable para cualquier ruta que requiera un rol mínimo.
 
 ### 2026-06-26 — Correcciones de UX y navegación
 
@@ -456,7 +518,7 @@ pide directamente):
 - Proyecto Angular 22 creado con Angular Material y cliente Supabase.
 - Esquema de base de datos: `herramientas`, `obras`, `encargados`, `inventario_obra`, `movimientos`;
   función `transferir_herramienta`; vistas `resumen_por_obra` e `historial_movimientos`; RLS activado.
-- Auth con Supabase (email + password), guard de rutas, redirect a `/login` sin sesión.
+- Auth con Supabase (username + password), guard de rutas, redirect a `/login` sin sesión.
 - Pantalla "Inventario por Obra" con datos reales desde Supabase.
 - Shell con sidenav hamburguesa, toolbar con logo y logout.
 - "Registrar herramienta en obra" (alta inicial en `inventario_obra`).
@@ -496,10 +558,9 @@ comandos que no confían en el certificado inyectado:
 ## Verificación end-to-end
 
 El flujo login → guard → inventario → logout fue verificado con Playwright contra el dev server real
-(no solo compilación/build). Para repetir manualmente: crear un usuario en Supabase Auth (Dashboard →
-Authentication → Users → Add user, marcando "Auto Confirm User"), levantar `npm run start`, entrar a
-`http://localhost:4200/` (debe redirigir a `/login`), iniciar sesión, y confirmar que se ve la tabla de
-"Inventario por Obra" (vacía si no hay `inventario_obra` cargado) y que "Cerrar sesión" regresa a `/login`.
+(no solo compilación/build). Para repetir manualmente: levantar `npm run start`, entrar a
+`http://localhost:4200/` (debe redirigir a `/login`), iniciar sesión con username + contraseña, y confirmar
+que se ve la tabla de "Inventario por Obra" y que "Cerrar sesión" regresa a `/login`.
 
 ## Producción
 
@@ -511,23 +572,15 @@ Authentication → Users → Add user, marcando "Auto Confirm User"), levantar `
 
 ### Cómo agregar un usuario nuevo
 
-No hay pantalla de registro en la app (intencional — es una herramienta interna). El proceso es:
+No hay pantalla de registro pública (intencional — es una herramienta interna). El proceso es:
 
-1. Supabase Dashboard → **Authentication → Users → Add user → Create new user**.
-2. Correo + contraseña, marcando **"Auto Confirm User"** (no hay SMTP configurado, así que sin esto el
-   usuario nunca podría confirmar su cuenta por correo y quedaría sin poder entrar).
-3. Esa persona ya puede iniciar sesión en `/login`. El header le mostrará su correo como saludo hasta que
-   se le configure un nombre.
-4. (Opcional) Para que el header salude por nombre ("Hola, {nombre}") en vez de mostrar el correo, hay que
-   correr una vez, con la contraseña de esa cuenta:
-   ```js
-   import { createClient } from '@supabase/supabase-js';
-   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-   await supabase.auth.signInWithPassword({ email: '...', password: '...' });
-   await supabase.auth.updateUser({ data: { full_name: 'Nombre' } });
-   ```
-   Esto es así (en vez de una pantalla de "editar perfil") porque el equipo es chico y no se justifica la
-   pantalla todavía — decisión deliberada, no una limitación técnica.
+1. Iniciar sesión con una cuenta `admin` o `super_admin`.
+2. Ir a **Usuarios** en el sidenav (solo visible para admin/super_admin).
+3. Completar el formulario: **Nombre de usuario** (cualquier cadena de texto, es el identificador de login)
+   + **Contraseña inicial** (mínimo 6 caracteres) + **Rol** (solo el super_admin puede elegir entre
+   Trabajador y Admin; los admins siempre crean Trabajadores).
+4. El usuario ya puede entrar en `/login` escribiendo exactamente el mismo nombre de usuario y la contraseña asignada.
+5. Cualquier usuario puede cambiar su propia contraseña desde el ícono ⚙ en el toolbar → "Cambiar contraseña".
 
 ### Límites de los planes gratuitos (verificado, no es un trial con fecha de vencimiento)
 
