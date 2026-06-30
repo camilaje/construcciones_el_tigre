@@ -96,12 +96,14 @@
             <a class="inventory__action" mat-icon-button [routerLink]="detailPath(row)">
               <mat-icon>visibility</mat-icon>
             </a>
-            <button class="inventory__action" mat-icon-button type="button" (click)="startEditSupervisor(row)">
-              <mat-icon>edit</mat-icon>
-            </button>
-            <button class="inventory__action" mat-icon-button type="button" (click)="remove(row)">
-              <mat-icon>delete</mat-icon>
-            </button>
+            @if (canModify()) {
+              <button class="inventory__action" mat-icon-button type="button" (click)="startEditSupervisor(row)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button class="inventory__action" mat-icon-button type="button" (click)="remove(row)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            }
           }
         </td>
       </ng-container>

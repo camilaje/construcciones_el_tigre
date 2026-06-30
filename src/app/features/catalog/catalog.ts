@@ -1,4 +1,4 @@
-import { Component, DestroyRef, Signal, WritableSignal, inject, signal } from '@angular/core';
+import { Component, DestroyRef, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { FormControl, FormGroup, FormGroupDirective, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -14,6 +14,8 @@ import { PostgrestError } from '@supabase/supabase-js';
 import { Observable, filter, from, switchMap } from 'rxjs';
 
 import {
+  APP_ROLE_ENUMERATION,
+  AuthService,
   ConfirmationService,
   NotificationService,
   POSTGRES_ERROR_CODE_ENUMERATION,
@@ -75,6 +77,7 @@ interface NameFormControlsType {
 })
 export class Catalog {
   private readonly supabaseService: SupabaseService;
+  private readonly authService: AuthService;
   private readonly notificationService: NotificationService;
   private readonly confirmationService: ConfirmationService;
   private readonly destroyRef: DestroyRef;
@@ -92,7 +95,8 @@ export class Catalog {
   protected readonly hasQuantity: boolean;
   protected readonly hasBodega: boolean;
   protected readonly hasObservations: boolean;
-  protected readonly columns: string[];
+  protected readonly columns: Signal<string[]>;
+  protected readonly canModify: Signal<boolean>;
   protected readonly items: Signal<CatalogItemType[]>;
   protected readonly loading: Signal<boolean>;
   protected readonly errorMessage: Signal<string | null>;
@@ -108,6 +112,7 @@ export class Catalog {
 
   constructor() {
     this.supabaseService = inject(SupabaseService);
+    this.authService = inject(AuthService);
     this.notificationService = inject(NotificationService);
     this.confirmationService = inject(ConfirmationService);
     this.destroyRef = inject(DestroyRef);
@@ -121,13 +126,17 @@ export class Catalog {
     this.hasBodega = routeData.hasBodega ?? false;
     this.hasObservations = routeData.hasObservations ?? false;
 
-    if (this.hasQuantity) {
-      this.columns = ['name', 'quantity', 'inSites', 'available', 'actions'];
-    } else if (this.hasBodega) {
-      this.columns = ['name', 'bodega', 'actions'];
-    } else {
-      this.columns = ['name', 'actions'];
-    }
+    this.canModify = computed((): boolean => this.authService.role() !== APP_ROLE_ENUMERATION.WORKER);
+
+    const baseColumns: string[] = this.hasQuantity
+      ? ['name', 'quantity', 'inSites', 'available']
+      : this.hasBodega
+        ? ['name', 'bodega']
+        : ['name'];
+
+    this.columns = computed((): string[] =>
+      this.canModify() ? [...baseColumns, 'actions'] : baseColumns
+    );
 
     this.itemsSignal = signal<CatalogItemType[]>([]);
     this.loadingSignal = signal<boolean>(true);

@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { APP_ROUTE_ENUMERATION, SUPABASE_TABLE_ENUMERATION, SUPABASE_VIEW_ENUMERATION, authGuard } from './core';
+import { APP_ROLE_ENUMERATION, APP_ROUTE_ENUMERATION, SUPABASE_TABLE_ENUMERATION, SUPABASE_VIEW_ENUMERATION, authGuard, roleGuard } from './core';
 import { Shell } from './shell';
 import {
   Login,
@@ -13,7 +13,8 @@ import {
   MaterialInventory,
   RegisterMaterialInitial,
   RegisterMaterial,
-  MaterialHistory
+  MaterialHistory,
+  UserManagement
 } from './features';
 
 export const routes: Routes = [
@@ -116,6 +117,12 @@ export const routes: Routes = [
           label: 'Encargados',
           singularLabel: 'Encargado'
         }
+      },
+      {
+        path: APP_ROUTE_ENUMERATION.USER_MANAGEMENT.slice(1),
+        component: UserManagement,
+        canActivate: [roleGuard([APP_ROLE_ENUMERATION.ADMIN, APP_ROLE_ENUMERATION.SUPER_ADMIN])],
+        data: { title: 'Gestión de usuarios' }
       }
     ]
   },

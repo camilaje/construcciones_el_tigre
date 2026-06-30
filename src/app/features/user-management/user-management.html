@@ -1,0 +1,107 @@
+<div class="user-management__page">
+  <div class="user-management__main">
+
+    <!-- Formulario de creación -->
+    <form
+      class="user-management__form"
+      [formGroup]="createForm"
+      (ngSubmit)="create(formDirective)"
+      #formDirective="ngForm"
+    >
+      <div class="user-management__form-fields">
+        <mat-form-field class="user-management__field" appearance="outline">
+          <mat-label>Nombre de usuario</mat-label>
+          <input matInput formControlName="username" type="text" autocomplete="off" />
+        </mat-form-field>
+
+        <mat-form-field class="user-management__field" appearance="outline">
+          <mat-label>Contraseña inicial</mat-label>
+          <input matInput formControlName="password" type="password" autocomplete="new-password" />
+          <mat-hint>Mínimo 6 caracteres</mat-hint>
+        </mat-form-field>
+
+        @if (isSuperAdmin()) {
+          <mat-form-field class="user-management__field" appearance="outline">
+            <mat-label>Rol</mat-label>
+            <mat-select formControlName="role">
+              <mat-option [value]="appRole.WORKER">Trabajador</mat-option>
+              <mat-option [value]="appRole.ADMIN">Admin</mat-option>
+            </mat-select>
+          </mat-form-field>
+        }
+      </div>
+
+      <button
+        class="user-management__submit"
+        mat-flat-button
+        color="primary"
+        type="submit"
+        [disabled]="createForm.invalid || saving()"
+      >
+        Agregar usuario
+      </button>
+    </form>
+
+    <app-error-banner [message]="errorMessage()" />
+
+    @if (loading()) {
+      <mat-spinner class="user-management__spinner" diameter="32" />
+    } @else if (users().length === 0) {
+      <p class="user-management__empty">No hay usuarios registrados.</p>
+    } @else {
+      <div class="user-management__table-wrapper">
+        <table class="user-management__table" mat-table [dataSource]="users()">
+
+          <ng-container matColumnDef="username">
+            <th mat-header-cell *matHeaderCellDef>Usuario</th>
+            <td mat-cell *matCellDef="let user">{{ user.username ?? '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="role">
+            <th mat-header-cell *matHeaderCellDef>Rol</th>
+            <td mat-cell *matCellDef="let user">
+              <span class="user-management__role-chip user-management__role-chip--{{ user.role }}">
+                {{ roleLabel(user.role) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef>Creado</th>
+            <td mat-cell *matCellDef="let user">{{ user.createdAt | slice:0:10 }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let user">
+              @if (canDelete(user)) {
+                <button mat-icon-button color="warn" (click)="remove(user)" aria-label="Eliminar usuario">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columns"></tr>
+          <tr mat-row *matRowDef="let row; columns: columns"></tr>
+        </table>
+      </div>
+    }
+  </div>
+
+  <mat-card class="user-management__tips">
+    <mat-card-content>
+      <span class="user-management__tips-count">{{ users().length }}</span>
+      <span class="user-management__tips-count-label">usuarios registrados</span>
+      <ul class="user-management__tips-list">
+        <li>La contraseña inicial debe tener al menos 6 caracteres. El usuario puede cambiarla después desde el ícono de ajustes en la barra superior.</li>
+        <li>Los <strong>trabajadores</strong> pueden crear registros pero no editar ni eliminar.</li>
+        <li>Los <strong>admins</strong> tienen acceso completo y pueden gestionar trabajadores.</li>
+        <li>No puedes eliminar tu propia cuenta.</li>
+        @if (isSuperAdmin()) {
+          <li>Como super admin eres el único que puede crear y eliminar cuentas de admin.</li>
+        }
+      </ul>
+    </mat-card-content>
+  </mat-card>
+</div>

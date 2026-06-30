@@ -12,7 +12,7 @@ import { APP_ROUTE_ENUMERATION, AuthService } from '../../core';
 import { ErrorBanner } from '../../shared';
 
 interface LoginFormControlsType {
-  email: FormControl<string>;
+  username: FormControl<string>;
   password: FormControl<string>;
 }
 
@@ -51,30 +51,27 @@ export class Login {
     this.errorMessage = this.errorMessageSignal.asReadonly();
 
     this.form = new FormGroup<LoginFormControlsType>({
-      email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
+      username: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
       password: new FormControl('', { nonNullable: true, validators: [Validators.required] })
     });
   }
 
   protected submit(): void {
-    if (this.form.invalid || this.loadingSignal()) {
-      return;
-    }
+    if (this.form.invalid || this.loadingSignal()) return;
 
-    const email: string = this.form.controls.email.value;
-    const password: string = this.form.controls.password.value;
+    const { username, password } = this.form.getRawValue();
 
     this.loadingSignal.set(true);
     this.errorMessageSignal.set(null);
 
     this.authService
-      .signIn(email, password)
+      .signInWithUsername(username, password)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((error: string | null): void => {
         this.loadingSignal.set(false);
 
         if (error) {
-          this.errorMessageSignal.set('Correo o contraseña incorrectos.');
+          this.errorMessageSignal.set(error);
           return;
         }
 

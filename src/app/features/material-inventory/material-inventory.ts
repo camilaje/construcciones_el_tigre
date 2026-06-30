@@ -11,6 +11,8 @@ import { PostgrestError } from '@supabase/supabase-js';
 import { Observable, filter, from, switchMap } from 'rxjs';
 
 import {
+  APP_ROLE_ENUMERATION,
+  AuthService,
   ConfirmationService,
   NotificationService,
   POSTGRES_ERROR_CODE_ENUMERATION,
@@ -68,6 +70,7 @@ interface StatType {
 })
 export class MaterialInventory {
   private readonly supabaseService: SupabaseService;
+  private readonly authService: AuthService;
   private readonly notificationService: NotificationService;
   private readonly confirmationService: ConfirmationService;
   private readonly destroyRef: DestroyRef;
@@ -79,7 +82,8 @@ export class MaterialInventory {
   private readonly siteFilterSignal: WritableSignal<string | null>;
   private readonly materialFilterSignal: WritableSignal<string | null>;
 
-  protected readonly columns: string[];
+  protected readonly columns: Signal<string[]>;
+  protected readonly canModify: Signal<boolean>;
   protected readonly rows: Signal<MaterialInventoryRowType[]>;
   protected readonly loading: Signal<boolean>;
   protected readonly errorMessage: Signal<string | null>;
@@ -95,6 +99,7 @@ export class MaterialInventory {
 
   constructor() {
     this.supabaseService = inject(SupabaseService);
+    this.authService = inject(AuthService);
     this.notificationService = inject(NotificationService);
     this.confirmationService = inject(ConfirmationService);
     this.destroyRef = inject(DestroyRef);
@@ -106,7 +111,11 @@ export class MaterialInventory {
     this.siteFilterSignal = signal<string | null>(null);
     this.materialFilterSignal = signal<string | null>(null);
 
-    this.columns = ['site', 'material', 'currentQuantity', 'supervisor', 'lastMovement', 'actions'];
+    this.canModify = computed((): boolean => this.authService.role() !== APP_ROLE_ENUMERATION.WORKER);
+    this.columns = computed((): string[] => {
+      const base: string[] = ['site', 'material', 'currentQuantity', 'supervisor', 'lastMovement'];
+      return this.canModify() ? [...base, 'actions'] : base;
+    });
     this.rows = this.rowsSignal.asReadonly();
     this.loading = this.loadingSignal.asReadonly();
     this.errorMessage = this.errorMessageSignal.asReadonly();

@@ -12,7 +12,9 @@ import { PostgrestError } from '@supabase/supabase-js';
 import { Observable, filter, from, switchMap } from 'rxjs';
 
 import {
+  APP_ROLE_ENUMERATION,
   APP_ROUTE_ENUMERATION,
+  AuthService,
   ConfirmationService,
   NotificationService,
   POSTGRES_ERROR_CODE_ENUMERATION,
@@ -71,6 +73,7 @@ interface InventoryStatType {
 })
 export class Inventory {
   private readonly supabaseService: SupabaseService;
+  private readonly authService: AuthService;
   private readonly notificationService: NotificationService;
   private readonly confirmationService: ConfirmationService;
   private readonly destroyRef: DestroyRef;
@@ -83,6 +86,7 @@ export class Inventory {
   private readonly toolFilterSignal: WritableSignal<string | null>;
 
   protected readonly columns: string[];
+  protected readonly canModify: Signal<boolean>;
   protected readonly rows: Signal<SiteSummaryRowType[]>;
   protected readonly loading: Signal<boolean>;
   protected readonly errorMessage: Signal<string | null>;
@@ -98,6 +102,7 @@ export class Inventory {
 
   constructor() {
     this.supabaseService = inject(SupabaseService);
+    this.authService = inject(AuthService);
     this.notificationService = inject(NotificationService);
     this.confirmationService = inject(ConfirmationService);
     this.destroyRef = inject(DestroyRef);
@@ -110,6 +115,7 @@ export class Inventory {
     this.toolFilterSignal = signal<string | null>(null);
 
     this.columns = ['site', 'tool', 'currentQuantity', 'supervisor', 'lastMovement', 'actions'];
+    this.canModify = computed((): boolean => this.authService.role() !== APP_ROLE_ENUMERATION.WORKER);
     this.rows = this.rowsSignal.asReadonly();
     this.loading = this.loadingSignal.asReadonly();
     this.errorMessage = this.errorMessageSignal.asReadonly();

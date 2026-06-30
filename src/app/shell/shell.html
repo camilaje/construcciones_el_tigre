@@ -22,6 +22,20 @@
         <span class="shell__nav-link-label">{{ homeLink.label }}</span>
       </a>
 
+      <!-- Gestión de usuarios (solo admin/super_admin) -->
+      @if (canManageUsers()) {
+        <a
+          class="shell__nav-link"
+          [routerLink]="userManagementLink.path"
+          routerLinkActive="shell__nav-link--active"
+          [routerLinkActiveOptions]="{ exact: false }"
+          (click)="closeSidenav()"
+        >
+          <mat-icon class="shell__nav-link-icon">{{ userManagementLink.icon }}</mat-icon>
+          <span class="shell__nav-link-label">{{ userManagementLink.label }}</span>
+        </a>
+      }
+
       <!-- Grupos con submenús -->
       <mat-accordion class="shell__accordion" [multi]="true">
         @for (group of navGroups; track group.label) {
@@ -65,6 +79,20 @@
       @if (displayName()) {
         <span class="shell__user">Hola, {{ displayName() }}</span>
       }
+      <button
+        class="shell__settings"
+        mat-icon-button
+        [matMenuTriggerFor]="userMenu"
+        aria-label="Opciones de usuario"
+      >
+        <mat-icon>settings</mat-icon>
+      </button>
+      <mat-menu #userMenu="matMenu">
+        <button mat-menu-item (click)="openChangePassword()">
+          <mat-icon>lock_reset</mat-icon>
+          <span>Cambiar contraseña</span>
+        </button>
+      </mat-menu>
       <button class="shell__logout" mat-button (click)="logout()" aria-label="Cerrar sesión">
         <mat-icon class="shell__logout-icon">logout</mat-icon>
         <span class="shell__logout-label">Cerrar sesión</span>

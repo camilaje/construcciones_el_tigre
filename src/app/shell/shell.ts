@@ -14,9 +14,12 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { filter } from 'rxjs';
 
 import { APP_ROUTE_ENUMERATION, AuthService } from '../core';
+import { ChangePasswordDialog } from './change-password-dialog';
 
 interface NavLinkType {
   path: APP_ROUTE_ENUMERATION;
@@ -49,7 +52,9 @@ const MATCH_OPTIONS: IsActiveMatchOptions = {
     MatSidenavModule,
     MatIconModule,
     MatButtonModule,
-    MatExpansionModule
+    MatExpansionModule,
+    MatMenuModule,
+    MatDialogModule
   ],
   templateUrl: './shell.html',
   styleUrl: './shell.scss'
@@ -57,19 +62,23 @@ const MATCH_OPTIONS: IsActiveMatchOptions = {
 export class Shell {
   private readonly authService: AuthService;
   private readonly router: Router;
+  private readonly dialog: MatDialog;
   private readonly destroyRef: DestroyRef;
   private readonly sidenavOpenedSignal: WritableSignal<boolean>;
   private readonly pageTitleSignal: WritableSignal<string>;
 
   protected readonly homeLink: NavLinkType;
+  protected readonly userManagementLink: NavLinkType;
   protected readonly navGroups: NavGroupType[];
   protected readonly sidenavOpened: Signal<boolean>;
   protected readonly pageTitle: Signal<string>;
   protected readonly displayName: Signal<string | null>;
+  protected readonly canManageUsers: Signal<boolean>;
 
   constructor() {
     this.authService = inject(AuthService);
     this.router = inject(Router);
+    this.dialog = inject(MatDialog);
     this.destroyRef = inject(DestroyRef);
     this.sidenavOpenedSignal = signal<boolean>(false);
     this.pageTitleSignal = signal<string>(this.resolvePageTitle());
@@ -81,10 +90,15 @@ export class Shell {
       const user = this.authService.session()?.user;
       if (!user) return null;
       const fullName: string | undefined = user.user_metadata?.['full_name'];
-      return fullName ?? user.email ?? null;
+      return fullName ?? null;
     });
 
     this.homeLink = { path: APP_ROUTE_ENUMERATION.HOME, label: 'Inicio', icon: 'home' };
+    this.userManagementLink = { path: APP_ROUTE_ENUMERATION.USER_MANAGEMENT, label: 'Usuarios', icon: 'manage_accounts' };
+    this.canManageUsers = computed((): boolean => {
+      const role: string | null = this.authService.role();
+      return role === 'admin' || role === 'super_admin';
+    });
 
     this.navGroups = [
       {
@@ -143,6 +157,10 @@ export class Shell {
 
   protected onSidenavOpenedChange(opened: boolean): void {
     this.sidenavOpenedSignal.set(opened);
+  }
+
+  protected openChangePassword(): void {
+    this.dialog.open(ChangePasswordDialog, { width: '26rem' });
   }
 
   protected logout(): void {

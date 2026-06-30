@@ -6,7 +6,18 @@ export enum SUPABASE_TABLE_ENUMERATION {
   MOVEMENTS = 'movimientos',
   MATERIALS = 'materiales',
   MATERIAL_INVENTORY = 'inventario_material',
-  MATERIAL_MOVEMENTS = 'movimientos_material'
+  MATERIAL_MOVEMENTS = 'movimientos_material',
+  USER_PROFILES = 'perfiles_usuario'
+}
+
+export enum SUPABASE_EDGE_FUNCTION_ENUMERATION {
+  MANAGE_USER = 'manage-user'
+}
+
+export enum APP_ROLE_ENUMERATION {
+  SUPER_ADMIN = 'super_admin',
+  ADMIN = 'admin',
+  WORKER = 'worker'
 }
 
 export enum SUPABASE_VIEW_ENUMERATION {
@@ -20,7 +31,8 @@ export enum SUPABASE_VIEW_ENUMERATION {
 
 export enum SUPABASE_RPC_ENUMERATION {
   TRANSFER_TOOL = 'transferir_herramienta',
-  TRANSFER_MATERIAL = 'transferir_material'
+  TRANSFER_MATERIAL = 'transferir_material',
+  GET_AUTH_EMAIL_BY_USERNAME = 'get_auth_email_by_username'
 }
 
 export enum POSTGRES_ERROR_CODE_ENUMERATION {

@@ -92,7 +92,7 @@
     &-header {
       color: #ffffff !important;
       background: transparent !important;
-      padding: 0 1rem !important;
+      padding: 0.75rem 1rem !important;
       min-height: 3rem !important;
 
       &:hover {
@@ -189,6 +189,11 @@
     @media (max-width: 600px) {
       display: none;
     }
+  }
+
+  &__settings {
+    flex: 0 0 auto;
+    margin-right: 0.25rem;
   }
 
   &__logout {
