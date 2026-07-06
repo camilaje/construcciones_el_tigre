@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { APP_ROLE_ENUMERATION, APP_ROUTE_ENUMERATION, SUPABASE_TABLE_ENUMERATION, SUPABASE_VIEW_ENUMERATION, authGuard, roleGuard } from './core';
+import { APP_ROLE_ENUMERATION, APP_ROUTE_ENUMERATION, SUPABASE_RPC_ENUMERATION, SUPABASE_TABLE_ENUMERATION, SUPABASE_VIEW_ENUMERATION, authGuard, roleGuard } from './core';
 import { Shell } from './shell';
 import {
   Login,
@@ -14,6 +14,7 @@ import {
   RegisterMaterialInitial,
   RegisterMaterial,
   MaterialHistory,
+  RegisterPurchase,
   UserManagement
 } from './features';
 
@@ -48,6 +49,18 @@ export const routes: Routes = [
         component: MovementHistory,
         data: { title: 'Historial de movimientos' }
       },
+      {
+        path: APP_ROUTE_ENUMERATION.REGISTER_PURCHASE.slice(1),
+        component: RegisterPurchase,
+        canActivate: [roleGuard([APP_ROLE_ENUMERATION.ADMIN, APP_ROLE_ENUMERATION.SUPER_ADMIN])],
+        data: {
+          title: 'Registrar compra de herramienta',
+          itemType: 'tool',
+          itemTable: SUPABASE_TABLE_ENUMERATION.TOOLS,
+          itemLabel: 'Herramienta',
+          rpc: SUPABASE_RPC_ENUMERATION.REGISTER_PURCHASE
+        }
+      },
 
       // Materiales
       {
@@ -69,6 +82,18 @@ export const routes: Routes = [
         path: APP_ROUTE_ENUMERATION.MATERIAL_HISTORY.slice(1),
         component: MaterialHistory,
         data: { title: 'Historial de movimientos de material' }
+      },
+      {
+        path: APP_ROUTE_ENUMERATION.MATERIALS_REGISTER_PURCHASE.slice(1),
+        component: RegisterPurchase,
+        canActivate: [roleGuard([APP_ROLE_ENUMERATION.ADMIN, APP_ROLE_ENUMERATION.SUPER_ADMIN])],
+        data: {
+          title: 'Registrar compra de material',
+          itemType: 'material',
+          itemTable: SUPABASE_TABLE_ENUMERATION.MATERIALS,
+          itemLabel: 'Material',
+          rpc: SUPABASE_RPC_ENUMERATION.REGISTER_MATERIAL_PURCHASE
+        }
       },
 
       // Catálogos

@@ -23,13 +23,14 @@ import {
 interface MaterialHistoryRowType {
   id: string;
   material: string;
-  sourceSite: string;
+  sourceSite: string | null;
   destinationSite: string;
   quantity: number;
   deliveredBy: string | null;
   receivedBy: string | null;
   date: string;
   notes: string | null;
+  type: 'traslado' | 'compra';
 }
 
 interface MaterialHistoryResponseType {
@@ -113,7 +114,11 @@ export class MaterialHistory {
 
     this.materialOptions = computed((): string[] => this.uniqueSorted(this.rowsSignal().map((r): string => r.material)));
     this.siteOptions = computed((): string[] =>
-      this.uniqueSorted(this.rowsSignal().flatMap((r): string[] => [r.sourceSite, r.destinationSite]))
+      this.uniqueSorted(
+        this.rowsSignal().flatMap((r): string[] =>
+          r.sourceSite ? [r.sourceSite, r.destinationSite] : [r.destinationSite]
+        )
+      )
     );
     this.filteredRows = computed((): MaterialHistoryRowType[] => {
       const material: string | null = this.materialFilterSignal();
@@ -159,8 +164,9 @@ export class MaterialHistory {
   }
 
   protected remove(row: MaterialHistoryRowType): void {
+    const origin: string = row.type === 'compra' ? 'Compra externa' : (row.sourceSite ?? '');
     this.confirmationService
-      .confirm(`¿Eliminar el movimiento de "${row.material}" (${row.sourceSite} → ${row.destinationSite}, ${row.date})? Las cantidades de inventario se recalcularán automáticamente.`)
+      .confirm(`¿Eliminar el ${row.type === 'compra' ? 'ingreso por compra' : 'movimiento'} de "${row.material}" (${origin} → ${row.destinationSite}, ${row.date})? Las cantidades de inventario se recalcularán automáticamente.`)
       .pipe(
         filter((confirmed: boolean): boolean => confirmed),
         switchMap((): Observable<MutationResponseType> =>
@@ -191,7 +197,7 @@ export class MaterialHistory {
       this.supabaseService.client
         .from(SUPABASE_VIEW_ENUMERATION.MATERIAL_MOVEMENT_HISTORY)
         .select(
-          'id, material, sourceSite:obra_origen, destinationSite:obra_destino, quantity:cantidad, deliveredBy:quien_entrega, receivedBy:quien_recibe, date:fecha, notes:observaciones'
+          'id, type:tipo, material, sourceSite:obra_origen, destinationSite:obra_destino, quantity:cantidad, deliveredBy:quien_entrega, receivedBy:quien_recibe, date:fecha, notes:observaciones'
         )
     )
       .pipe(takeUntilDestroyed(this.destroyRef))

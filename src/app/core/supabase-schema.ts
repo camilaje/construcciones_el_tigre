@@ -32,6 +32,8 @@ export enum SUPABASE_VIEW_ENUMERATION {
 export enum SUPABASE_RPC_ENUMERATION {
   TRANSFER_TOOL = 'transferir_herramienta',
   TRANSFER_MATERIAL = 'transferir_material',
+  REGISTER_PURCHASE = 'registrar_compra',
+  REGISTER_MATERIAL_PURCHASE = 'registrar_compra_material',
   GET_AUTH_EMAIL_BY_USERNAME = 'get_auth_email_by_username'
 }
 

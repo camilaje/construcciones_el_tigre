@@ -25,6 +25,7 @@ interface NavLinkType {
   path: APP_ROUTE_ENUMERATION;
   label: string;
   icon: string;
+  adminOnly?: boolean;
 }
 
 interface NavGroupType {
@@ -108,6 +109,7 @@ export class Shell {
           { path: APP_ROUTE_ENUMERATION.INVENTORY, label: 'Inventario', icon: 'inventory_2' },
           { path: APP_ROUTE_ENUMERATION.REGISTER_TOOL, label: 'Registrar en obra', icon: 'add_box' },
           { path: APP_ROUTE_ENUMERATION.REGISTER_MOVEMENT, label: 'Registrar movimiento', icon: 'sync_alt' },
+          { path: APP_ROUTE_ENUMERATION.REGISTER_PURCHASE, label: 'Registrar compra', icon: 'shopping_cart', adminOnly: true },
           { path: APP_ROUTE_ENUMERATION.MOVEMENT_HISTORY, label: 'Historial', icon: 'history' }
         ]
       },
@@ -118,6 +120,7 @@ export class Shell {
           { path: APP_ROUTE_ENUMERATION.MATERIAL_INVENTORY, label: 'Inventario', icon: 'inventory_2' },
           { path: APP_ROUTE_ENUMERATION.REGISTER_MATERIAL_INITIAL, label: 'Registrar en obra', icon: 'add_box' },
           { path: APP_ROUTE_ENUMERATION.REGISTER_MATERIAL, label: 'Registrar movimiento', icon: 'sync_alt' },
+          { path: APP_ROUTE_ENUMERATION.MATERIALS_REGISTER_PURCHASE, label: 'Registrar compra', icon: 'shopping_cart', adminOnly: true },
           { path: APP_ROUTE_ENUMERATION.MATERIAL_HISTORY, label: 'Historial', icon: 'history' }
         ]
       },

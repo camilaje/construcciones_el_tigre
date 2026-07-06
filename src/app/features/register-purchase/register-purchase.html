@@ -1,0 +1,77 @@
+<div class="register-purchase__page">
+  @if (loadingCatalogs()) {
+    <mat-spinner class="register-purchase__spinner" diameter="32" />
+  } @else {
+    <mat-card class="register-purchase__card">
+      <mat-card-content>
+        <form
+          class="register-purchase__form"
+          [formGroup]="form"
+          (ngSubmit)="submit(formDirective)"
+          #formDirective="ngForm"
+        >
+          <mat-form-field class="register-purchase__field" appearance="outline">
+            <mat-label>{{ routeData.itemLabel }}</mat-label>
+            <mat-select formControlName="itemId">
+              @for (item of items(); track item.id) {
+                <mat-option [value]="item.id">{{ item.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field class="register-purchase__field" appearance="outline">
+            <mat-label>Obra / Bodega de destino</mat-label>
+            <mat-select formControlName="destinationSiteId">
+              @for (site of sites(); track site.id) {
+                <mat-option [value]="site.id">{{ site.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field class="register-purchase__field" appearance="outline">
+            <mat-label>Cantidad comprada</mat-label>
+            <input matInput type="number" formControlName="quantity" min="1" />
+          </mat-form-field>
+
+          <mat-form-field class="register-purchase__field" appearance="outline">
+            <mat-label>Fecha de ingreso</mat-label>
+            <input matInput type="date" formControlName="date" />
+          </mat-form-field>
+
+          <mat-form-field class="register-purchase__field" appearance="outline">
+            <mat-label>Referencia / proveedor (opcional)</mat-label>
+            <textarea matInput formControlName="notes" rows="2"></textarea>
+          </mat-form-field>
+
+          <app-error-banner [message]="errorMessage()" />
+
+          <button
+            class="register-purchase__submit"
+            mat-flat-button
+            color="primary"
+            type="submit"
+            [disabled]="form.invalid || saving()"
+          >
+            @if (saving()) {
+              <mat-spinner class="register-purchase__submit-spinner" diameter="20" />
+            } @else {
+              Registrar compra
+            }
+          </button>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="register-purchase__tips">
+      <mat-card-content>
+        <h2 class="register-purchase__tips-title">Cuándo usar este formulario</h2>
+        <ul class="register-purchase__tips-list">
+          <li>Úsalo cuando llegue stock nuevo desde un proveedor externo — no cuando se traslada entre obras.</li>
+          <li>La cantidad total del catálogo se actualiza automáticamente al registrar la compra.</li>
+          <li>Si el {{ routeData.itemLabel.toLowerCase() }} ya existe en la obra de destino, la cantidad se suma al stock actual.</li>
+          <li>Para trasladar entre obras usa <strong>Registrar movimiento</strong>.</li>
+        </ul>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

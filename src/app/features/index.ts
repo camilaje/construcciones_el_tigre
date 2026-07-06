@@ -10,4 +10,5 @@ export * from './material-inventory';
 export * from './register-material-initial';
 export * from './register-material';
 export * from './material-history';
+export * from './register-purchase';
 export * from './user-management';

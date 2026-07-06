@@ -51,16 +51,18 @@
             </mat-expansion-panel-header>
 
             @for (link of group.links; track link.path) {
-              <a
-                class="shell__nav-sublink"
-                [routerLink]="link.path"
-                routerLinkActive="shell__nav-sublink--active"
-                [routerLinkActiveOptions]="{ exact: false }"
-                (click)="closeSidenav()"
-              >
-                <mat-icon class="shell__nav-sublink-icon">{{ link.icon }}</mat-icon>
-                <span class="shell__nav-sublink-label">{{ link.label }}</span>
-              </a>
+              @if (!link.adminOnly || canManageUsers()) {
+                <a
+                  class="shell__nav-sublink"
+                  [routerLink]="link.path"
+                  routerLinkActive="shell__nav-sublink--active"
+                  [routerLinkActiveOptions]="{ exact: false }"
+                  (click)="closeSidenav()"
+                >
+                  <mat-icon class="shell__nav-sublink-icon">{{ link.icon }}</mat-icon>
+                  <span class="shell__nav-sublink-label">{{ link.label }}</span>
+                </a>
+              }
             }
           </mat-expansion-panel>
         }

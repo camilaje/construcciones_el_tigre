@@ -65,7 +65,14 @@
 
           <ng-container matColumnDef="route">
             <th mat-header-cell *matHeaderCellDef>Movimiento</th>
-            <td mat-cell *matCellDef="let row" data-label="Movimiento">{{ row.sourceSite }} → {{ row.destinationSite }}</td>
+            <td mat-cell *matCellDef="let row" data-label="Movimiento">
+              @if (row.type === 'compra') {
+                <span class="material-history__purchase-badge">Compra</span>
+                → {{ row.destinationSite }}
+              } @else {
+                {{ row.sourceSite }} → {{ row.destinationSite }}
+              }
+            </td>
           </ng-container>
 
           <ng-container matColumnDef="quantity">
