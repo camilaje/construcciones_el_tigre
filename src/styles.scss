@@ -62,4 +62,45 @@ body {
   color: #ffffff !important;
 }
 
-/* You can add global styles to this file, and also import other style files */
+// ─── Mobile table card reflow ─────────────────────────────────────────────────
+// mat-table renders <tr mat-row> elements via CdkTable's RowOutlet, which
+// creates embedded views in the CDK component's context — not in the host
+// component's context. That means those <tr> elements don't receive the host
+// component's _ngcontent attribute, so component-scoped SCSS selectors (even
+// with !important) never match them. The workaround is a global rule here,
+// scoped to the specific BEM class names that each table uses.
+@media (max-width: 600px) {
+  .inventory__table,
+  .movement-history__table,
+  .material-inventory__table,
+  .material-history__table,
+  .inventory-detail__table {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+
+    thead,
+    tr[mat-header-row] {
+      display: none !important;
+    }
+
+    tbody {
+      display: block !important;
+      width: 100% !important;
+    }
+
+    tr[mat-row] {
+      display: block !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      height: auto !important;
+    }
+
+    td[mat-cell] {
+      display: flex !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      height: auto !important;
+    }
+  }
+}

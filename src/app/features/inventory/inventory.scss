@@ -39,6 +39,7 @@
     border: 1px solid rgba(0, 0, 0, 0.08);
 
     @media (max-width: 600px) {
+      width: 100%;
       overflow: visible;
       border: none;
     }
@@ -48,32 +49,36 @@
   // cards (one per row): each <td> becomes a "label: value" line via its
   // data-label attribute, so there's no horizontal scroll combined with the
   // tall rows that long wrapped text (e.g. "Último movimiento") was causing.
+  // !important on display/width overrides Angular Material global .mat-mdc-table
+  // and .mat-mdc-row rules which have equal or higher specificity than
+  // component-scoped selectors in some Material versions.
   &__table {
     width: 100%;
 
     @media (max-width: 600px) {
-      display: block;
+      display: block !important;
+      width: 100% !important;
+      min-width: 0 !important;
 
-      // The CDK-injected <thead> wrapper itself isn't part of this component's
-      // template, so Angular's view-encapsulation attribute never lands on it
-      // and a `thead { ... }` selector here can never match it. The header
-      // <tr>/<th> elements inside it ARE from the template, so target those.
       tr[mat-header-row] {
         display: none;
       }
 
       tr {
-        display: block;
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box;
         height: auto !important;
         margin-bottom: 1rem;
         padding: 0.75rem 1rem;
         border: 1px solid rgba(0, 0, 0, 0.08);
         border-radius: 0.5rem;
+        background-color: var(--mat-sys-surface);
       }
 
       td {
-        display: flex;
-        width: 100%;
+        display: flex !important;
+        width: 100% !important;
         height: auto !important;
         justify-content: space-between;
         align-items: center;

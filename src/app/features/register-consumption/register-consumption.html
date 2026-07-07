@@ -74,10 +74,27 @@
       <mat-card-content>
         <h2 class="register-consumption__tips-title">Cuándo usar este formulario</h2>
         <ul class="register-consumption__tips-list">
-          <li>Úsalo cuando el material se usó en obra y ya no existe — no cuando se traslada a otra ubicación.</li>
-          <li>La cantidad total del catálogo se reduce automáticamente al registrar el consumo.</li>
-          <li>La fecha puede ser retroactiva para registrar consumos del día anterior.</li>
-          <li>Para mover material de una obra a otra usa <strong>Registrar movimiento</strong>.</li>
+          <li>
+            Úsalo cuando el material <strong>se gastó en obra</strong> y ya no existe físicamente
+            — no cuando se mueve a otra ubicación. Para traslados usa
+            <strong>Registrar movimiento de material</strong>.
+          </li>
+          <li>
+            El dropdown de obra solo muestra las obras donde ese material tiene stock disponible
+            (cantidad &gt; 0). Si no aparece ninguna, primero registra el material en esa obra.
+          </li>
+          <li>
+            El consumo puede ser parcial: si hay 30 unidades y solo se usaron 5 hoy,
+            ingresa 5 — las 25 restantes siguen disponibles.
+          </li>
+          <li>
+            La fecha puede ser retroactiva para registrar consumos que ocurrieron días atrás.
+            Usa la fecha real de uso para mantener el historial correcto.
+          </li>
+          <li>
+            El stock de la obra y la cantidad total del catálogo se reducen automáticamente.
+            El registro queda en el historial con badge ámbar "Consumo" para diferenciarlo de traslados.
+          </li>
         </ul>
       </mat-card-content>
     </mat-card>

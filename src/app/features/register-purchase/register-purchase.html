@@ -66,10 +66,26 @@
       <mat-card-content>
         <h2 class="register-purchase__tips-title">Cuándo usar este formulario</h2>
         <ul class="register-purchase__tips-list">
-          <li>Úsalo cuando llegue stock nuevo desde un proveedor externo — no cuando se traslada entre obras.</li>
-          <li>La cantidad total del catálogo se actualiza automáticamente al registrar la compra.</li>
-          <li>Si el {{ routeData.itemLabel.toLowerCase() }} ya existe en la obra de destino, la cantidad se suma al stock actual.</li>
-          <li>Para trasladar entre obras usa <strong>Registrar movimiento</strong>.</li>
+          <li>
+            Úsalo cuando llegue stock nuevo desde un proveedor externo — no cuando se traslada entre obras.
+            Para traslados usa <strong>Registrar movimiento</strong>.
+          </li>
+          <li>
+            Si <strong>{{ routeData.itemLabel }}</strong> no aparece en la lista, agrégalo primero desde
+            <strong>Catálogos</strong> antes de registrar la compra.
+          </li>
+          <li>
+            <strong>Obra / Bodega de destino</strong> es dónde quedará almacenado el stock que compraste.
+            Si ya había unidades ahí, la cantidad se suma al stock existente.
+          </li>
+          <li>
+            <strong>Referencia / proveedor</strong> es opcional pero útil para rastrear facturas y
+            conciliar compras con contabilidad.
+          </li>
+          <li>
+            La cantidad total del catálogo se actualiza automáticamente y el registro queda visible en
+            el historial de movimientos como compra.
+          </li>
         </ul>
       </mat-card-content>
     </mat-card>

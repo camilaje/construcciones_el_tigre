@@ -49,36 +49,40 @@
     border: 1px solid rgba(0, 0, 0, 0.08);
 
     @media (max-width: 600px) {
+      width: 100%;
       overflow: visible;
       border: none;
     }
   }
 
-  // See inventory.scss for why `thead` itself can't be targeted (the CDK-injected
-  // wrapper never gets Angular's view-encapsulation attribute) and why tr/td need
-  // an explicit `height: auto` override (Material sets a fixed row height).
+  // See inventory.scss for the !important rationale on display/width.
   &__table {
     width: 100%;
 
     @media (max-width: 600px) {
-      display: block;
+      display: block !important;
+      width: 100% !important;
+      min-width: 0 !important;
 
       tr[mat-header-row] {
         display: none;
       }
 
       tr {
-        display: block;
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box;
         height: auto !important;
         margin-bottom: 1rem;
         padding: 0.75rem 1rem;
         border: 1px solid rgba(0, 0, 0, 0.08);
         border-radius: 0.5rem;
+        background-color: var(--mat-sys-surface);
       }
 
       td {
-        display: flex;
-        width: 100%;
+        display: flex !important;
+        width: 100% !important;
         height: auto !important;
         justify-content: space-between;
         align-items: center;
