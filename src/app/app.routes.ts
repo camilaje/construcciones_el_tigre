@@ -15,6 +15,8 @@ import {
   RegisterMaterial,
   MaterialHistory,
   RegisterPurchase,
+  RegisterWriteoff,
+  RegisterConsumption,
   UserManagement
 } from './features';
 
@@ -61,6 +63,12 @@ export const routes: Routes = [
           rpc: SUPABASE_RPC_ENUMERATION.REGISTER_PURCHASE
         }
       },
+      {
+        path: APP_ROUTE_ENUMERATION.REGISTER_WRITEOFF.slice(1),
+        component: RegisterWriteoff,
+        canActivate: [roleGuard([APP_ROLE_ENUMERATION.ADMIN, APP_ROLE_ENUMERATION.SUPER_ADMIN])],
+        data: { title: 'Dar de baja herramienta' }
+      },
 
       // Materiales
       {
@@ -94,6 +102,11 @@ export const routes: Routes = [
           itemLabel: 'Material',
           rpc: SUPABASE_RPC_ENUMERATION.REGISTER_MATERIAL_PURCHASE
         }
+      },
+      {
+        path: APP_ROUTE_ENUMERATION.MATERIALS_REGISTER_CONSUMPTION.slice(1),
+        component: RegisterConsumption,
+        data: { title: 'Registrar consumo de material' }
       },
 
       // Catálogos

@@ -121,4 +121,15 @@
     border-radius: 0.75rem;
     margin-right: 0.25rem;
   }
+
+  &__consumption-badge {
+    display: inline-block;
+    background-color: #ffe0b2;
+    color: #e65100;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.75rem;
+    margin-left: 0.25rem;
+  }
 }

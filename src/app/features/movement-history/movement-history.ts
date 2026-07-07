@@ -24,13 +24,14 @@ interface MovementHistoryRowType {
   id: string;
   tool: string;
   sourceSite: string | null;
-  destinationSite: string;
+  destinationSite: string | null;
   quantity: number;
   deliveredBy: string | null;
   receivedBy: string | null;
   date: string;
   notes: string | null;
-  type: 'traslado' | 'compra';
+  type: 'traslado' | 'compra' | 'baja';
+  reason: string | null;
 }
 
 interface MovementHistoryResponseType {
@@ -115,9 +116,9 @@ export class MovementHistory {
     this.toolOptions = computed((): string[] => this.uniqueSorted(this.rowsSignal().map((row): string => row.tool)));
     this.siteOptions = computed((): string[] =>
       this.uniqueSorted(
-        this.rowsSignal().flatMap((row): string[] =>
-          row.sourceSite ? [row.sourceSite, row.destinationSite] : [row.destinationSite]
-        )
+        this.rowsSignal()
+          .flatMap((row): (string | null)[] => [row.sourceSite, row.destinationSite])
+          .filter((s): s is string => s !== null)
       )
     );
     this.filteredRows = computed((): MovementHistoryRowType[] => {
@@ -169,8 +170,9 @@ export class MovementHistory {
 
   protected remove(row: MovementHistoryRowType): void {
     const origin: string = row.type === 'compra' ? 'Compra externa' : (row.sourceSite ?? '');
+    const destination: string = row.type === 'baja' ? 'Baja' : (row.destinationSite ?? '');
     this.confirmationService
-      .confirm(`¿Eliminar el ${row.type === 'compra' ? 'ingreso por compra' : 'movimiento'} de "${row.tool}" (${origin} → ${row.destinationSite}, ${row.date})? Las cantidades de inventario se recalcularán automáticamente.`)
+      .confirm(`¿Eliminar el ${row.type === 'compra' ? 'ingreso por compra' : row.type === 'baja' ? 'registro de baja' : 'movimiento'} de "${row.tool}" (${origin} → ${destination}, ${row.date})? Las cantidades de inventario se recalcularán automáticamente.`)
       .pipe(
         filter((confirmed: boolean): boolean => confirmed),
         switchMap((): Observable<MutationResponseType> =>
@@ -198,7 +200,7 @@ export class MovementHistory {
       this.supabaseService.client
         .from(SUPABASE_VIEW_ENUMERATION.MOVEMENT_HISTORY)
         .select(
-          'id, type:tipo, tool:herramienta, sourceSite:obra_origen, destinationSite:obra_destino, quantity:cantidad, deliveredBy:quien_entrega, receivedBy:quien_recibe, date:fecha, notes:observaciones'
+          'id, type:tipo, tool:herramienta, sourceSite:obra_origen, destinationSite:obra_destino, quantity:cantidad, deliveredBy:quien_entrega, receivedBy:quien_recibe, date:fecha, notes:observaciones, reason:motivo'
         )
     )
       .pipe(takeUntilDestroyed(this.destroyRef))

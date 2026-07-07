@@ -1,4 +1,5 @@
 import { Component, DestroyRef, Signal, WritableSignal, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, FormGroupDirective, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,6 +12,7 @@ import { PostgrestError } from '@supabase/supabase-js';
 import { Observable, combineLatest, from } from 'rxjs';
 
 import {
+  APP_ROUTE_ENUMERATION,
   NotificationService,
   POSTGRES_ERROR_CODE_ENUMERATION,
   SUPABASE_TABLE_ENUMERATION,
@@ -57,6 +59,7 @@ interface RegisterMaterialInitialFormControlsType {
 export class RegisterMaterialInitial {
   private readonly supabaseService: SupabaseService;
   private readonly notificationService: NotificationService;
+  private readonly router: Router;
   private readonly destroyRef: DestroyRef;
   private readonly materialsSignal: WritableSignal<CatalogItemType[]>;
   private readonly sitesSignal: WritableSignal<CatalogItemType[]>;
@@ -76,6 +79,7 @@ export class RegisterMaterialInitial {
   constructor() {
     this.supabaseService = inject(SupabaseService);
     this.notificationService = inject(NotificationService);
+    this.router = inject(Router);
     this.destroyRef = inject(DestroyRef);
     this.materialsSignal = signal<CatalogItemType[]>([]);
     this.sitesSignal = signal<CatalogItemType[]>([]);
@@ -131,7 +135,7 @@ export class RegisterMaterialInitial {
         }
 
         this.notificationService.success('Material registrado correctamente en la obra.');
-        formDirective.resetForm({ materialId: '', siteId: '', initialQuantity: 1, supervisorId: null });
+        this.router.navigate([APP_ROUTE_ENUMERATION.MATERIAL_INVENTORY]);
       });
   }
 

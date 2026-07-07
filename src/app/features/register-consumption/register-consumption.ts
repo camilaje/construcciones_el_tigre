@@ -7,7 +7,7 @@ import {
   ReactiveFormsModule,
   Validators
 } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -15,7 +15,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PostgrestError } from '@supabase/supabase-js';
-import { Observable, combineLatest, from } from 'rxjs';
+import { filter, from, switchMap } from 'rxjs';
 
 import {
   APP_ROUTE_ENUMERATION,
@@ -26,13 +26,24 @@ import {
 } from '../../core';
 import { ErrorBanner } from '../../shared';
 
-interface CatalogItemType {
+interface MaterialItemType {
   id: string;
   name: string;
 }
 
-interface CatalogItemResponseType {
-  data: CatalogItemType[] | null;
+interface AvailableSiteType {
+  obraId: string;
+  name: string;
+  currentQty: number;
+}
+
+interface MaterialCatalogResponseType {
+  data: MaterialItemType[] | null;
+  error: PostgrestError | null;
+}
+
+interface InventoryResponseType {
+  data: { obra_id: string; cantidad_actual: number; obras: { nombre: string }[] }[] | null;
   error: PostgrestError | null;
 }
 
@@ -40,23 +51,16 @@ interface RpcResponseType {
   error: PostgrestError | null;
 }
 
-interface RegisterPurchaseFormControlsType {
-  itemId: FormControl<string>;
-  destinationSiteId: FormControl<string>;
+interface RegisterConsumptionFormControlsType {
+  materialId: FormControl<string>;
+  siteId: FormControl<string>;
   quantity: FormControl<number>;
   date: FormControl<string>;
   notes: FormControl<string>;
 }
 
-interface RouteDataType {
-  itemType: 'tool' | 'material';
-  itemTable: SUPABASE_TABLE_ENUMERATION;
-  itemLabel: string;
-  rpc: SUPABASE_RPC_ENUMERATION;
-}
-
 @Component({
-  selector: 'app-register-purchase',
+  selector: 'app-register-consumption',
   imports: [
     ReactiveFormsModule,
     MatButtonModule,
@@ -67,25 +71,26 @@ interface RouteDataType {
     MatProgressSpinnerModule,
     ErrorBanner
   ],
-  templateUrl: './register-purchase.html',
-  styleUrl: './register-purchase.scss'
+  templateUrl: './register-consumption.html',
+  styleUrl: './register-consumption.scss'
 })
-export class RegisterPurchase {
+export class RegisterConsumption {
   private readonly supabaseService: SupabaseService;
   private readonly notificationService: NotificationService;
   private readonly router: Router;
   private readonly destroyRef: DestroyRef;
-  private readonly itemsSignal: WritableSignal<CatalogItemType[]>;
-  private readonly sitesSignal: WritableSignal<CatalogItemType[]>;
+  private readonly materialsSignal: WritableSignal<MaterialItemType[]>;
+  private readonly sitesSignal: WritableSignal<AvailableSiteType[]>;
   private readonly loadingCatalogsSignal: WritableSignal<boolean>;
+  private readonly loadingSitesSignal: WritableSignal<boolean>;
   private readonly savingSignal: WritableSignal<boolean>;
   private readonly errorMessageSignal: WritableSignal<string | null>;
 
-  protected readonly routeData: RouteDataType;
-  protected readonly form: FormGroup<RegisterPurchaseFormControlsType>;
-  protected readonly items: Signal<CatalogItemType[]>;
-  protected readonly sites: Signal<CatalogItemType[]>;
+  protected readonly form: FormGroup<RegisterConsumptionFormControlsType>;
+  protected readonly materials: Signal<MaterialItemType[]>;
+  protected readonly sites: Signal<AvailableSiteType[]>;
   protected readonly loadingCatalogs: Signal<boolean>;
+  protected readonly loadingSites: Signal<boolean>;
   protected readonly saving: Signal<boolean>;
   protected readonly errorMessage: Signal<string | null>;
 
@@ -94,29 +99,30 @@ export class RegisterPurchase {
     this.notificationService = inject(NotificationService);
     this.router = inject(Router);
     this.destroyRef = inject(DestroyRef);
-    this.itemsSignal = signal<CatalogItemType[]>([]);
-    this.sitesSignal = signal<CatalogItemType[]>([]);
+    this.materialsSignal = signal<MaterialItemType[]>([]);
+    this.sitesSignal = signal<AvailableSiteType[]>([]);
     this.loadingCatalogsSignal = signal<boolean>(true);
+    this.loadingSitesSignal = signal<boolean>(false);
     this.savingSignal = signal<boolean>(false);
     this.errorMessageSignal = signal<string | null>(null);
 
-    this.items = this.itemsSignal.asReadonly();
+    this.materials = this.materialsSignal.asReadonly();
     this.sites = this.sitesSignal.asReadonly();
     this.loadingCatalogs = this.loadingCatalogsSignal.asReadonly();
+    this.loadingSites = this.loadingSitesSignal.asReadonly();
     this.saving = this.savingSignal.asReadonly();
     this.errorMessage = this.errorMessageSignal.asReadonly();
 
-    this.routeData = inject(ActivatedRoute).snapshot.data as RouteDataType;
-
-    this.form = new FormGroup<RegisterPurchaseFormControlsType>({
-      itemId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-      destinationSiteId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    this.form = new FormGroup<RegisterConsumptionFormControlsType>({
+      materialId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+      siteId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
       quantity: new FormControl(1, { nonNullable: true, validators: [Validators.required, Validators.min(1)] }),
       date: new FormControl(this.today(), { nonNullable: true, validators: [Validators.required] }),
       notes: new FormControl('', { nonNullable: true })
     });
 
-    this.loadCatalogs();
+    this.loadMaterials();
+    this.watchMaterialChange();
   }
 
   protected submit(formDirective: FormGroupDirective): void {
@@ -127,13 +133,10 @@ export class RegisterPurchase {
     this.savingSignal.set(true);
     this.errorMessageSignal.set(null);
 
-    const itemParam: string =
-      this.routeData.itemType === 'tool' ? 'p_herramienta_id' : 'p_material_id';
-
     from(
-      this.supabaseService.client.rpc(this.routeData.rpc, {
-        [itemParam]: this.form.controls.itemId.value,
-        p_obra_destino_id: this.form.controls.destinationSiteId.value,
+      this.supabaseService.client.rpc(SUPABASE_RPC_ENUMERATION.REGISTER_CONSUMPTION, {
+        p_material_id: this.form.controls.materialId.value,
+        p_obra_origen_id: this.form.controls.siteId.value,
         p_cantidad: this.form.controls.quantity.value,
         p_fecha: this.form.controls.date.value,
         p_observaciones: this.form.controls.notes.value || null
@@ -148,14 +151,8 @@ export class RegisterPurchase {
           return;
         }
 
-        this.notificationService.success(
-          `Compra de ${this.routeData.itemLabel.toLowerCase()} registrada correctamente.`
-        );
-        this.router.navigate([
-          this.routeData.itemType === 'tool'
-            ? APP_ROUTE_ENUMERATION.INVENTORY
-            : APP_ROUTE_ENUMERATION.MATERIAL_INVENTORY
-        ]);
+        this.notificationService.success('Consumo registrado correctamente.');
+        this.router.navigate([APP_ROUTE_ENUMERATION.MATERIAL_INVENTORY]);
       });
   }
 
@@ -163,32 +160,51 @@ export class RegisterPurchase {
     return new Date().toISOString().slice(0, 10);
   }
 
-  private loadCatalogs(): void {
-    const items$: Observable<CatalogItemResponseType> = from(
+  private loadMaterials(): void {
+    from(
       this.supabaseService.client
-        .from(this.routeData.itemTable)
+        .from(SUPABASE_TABLE_ENUMERATION.MATERIALS)
         .select('id, name:nombre')
         .order('nombre')
-    );
-    const sites$: Observable<CatalogItemResponseType> = from(
-      this.supabaseService.client
-        .from(SUPABASE_TABLE_ENUMERATION.SITES)
-        .select('id, name:nombre')
-        .order('nombre')
-    );
-
-    combineLatest([items$, sites$])
+    )
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([items, sites]): void => {
+      .subscribe((result: MaterialCatalogResponseType): void => {
         this.loadingCatalogsSignal.set(false);
-
-        if (items.error || sites.error) {
-          this.errorMessageSignal.set('No se pudieron cargar los catálogos.');
-          return;
+        if (!result.error) {
+          this.materialsSignal.set(result.data ?? []);
         }
-
-        this.itemsSignal.set(items.data ?? []);
-        this.sitesSignal.set(sites.data ?? []);
       });
+  }
+
+  private watchMaterialChange(): void {
+    this.form.controls.materialId.valueChanges.pipe(
+      filter((id): id is string => !!id),
+      switchMap((id: string) => {
+        this.sitesSignal.set([]);
+        this.loadingSitesSignal.set(true);
+        this.form.controls.siteId.reset('');
+        return from(
+          this.supabaseService.client
+            .from(SUPABASE_TABLE_ENUMERATION.MATERIAL_INVENTORY)
+            .select('obra_id, cantidad_actual, obras(nombre)')
+            .eq('material_id', id)
+            .gt('cantidad_actual', 0)
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((result: InventoryResponseType): void => {
+      this.loadingSitesSignal.set(false);
+      if (!result.error && result.data) {
+        this.sitesSignal.set(
+          result.data
+            .map((r): AvailableSiteType => ({
+              obraId: r.obra_id,
+              name: (r.obras as { nombre: string }[])[0]?.nombre ?? '',
+              currentQty: r.cantidad_actual
+            }))
+            .sort((a, b): number => a.name.localeCompare(b.name))
+        );
+      }
+    });
   }
 }

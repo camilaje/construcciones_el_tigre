@@ -14,6 +14,8 @@ export enum APP_ROUTE_ENUMERATION {
   REGISTER_MATERIAL = '/materials/register',
   MATERIAL_HISTORY = '/materials/history',
   REGISTER_PURCHASE = '/register-purchase',
+  REGISTER_WRITEOFF = '/register-writeoff',
   MATERIALS_REGISTER_PURCHASE = '/materials/register-purchase',
+  MATERIALS_REGISTER_CONSUMPTION = '/materials/register-consumption',
   USER_MANAGEMENT = '/admin/users'
 }

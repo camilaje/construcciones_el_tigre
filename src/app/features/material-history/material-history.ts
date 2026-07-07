@@ -24,13 +24,13 @@ interface MaterialHistoryRowType {
   id: string;
   material: string;
   sourceSite: string | null;
-  destinationSite: string;
+  destinationSite: string | null;
   quantity: number;
   deliveredBy: string | null;
   receivedBy: string | null;
   date: string;
   notes: string | null;
-  type: 'traslado' | 'compra';
+  type: 'traslado' | 'compra' | 'consumo';
 }
 
 interface MaterialHistoryResponseType {
@@ -115,9 +115,9 @@ export class MaterialHistory {
     this.materialOptions = computed((): string[] => this.uniqueSorted(this.rowsSignal().map((r): string => r.material)));
     this.siteOptions = computed((): string[] =>
       this.uniqueSorted(
-        this.rowsSignal().flatMap((r): string[] =>
-          r.sourceSite ? [r.sourceSite, r.destinationSite] : [r.destinationSite]
-        )
+        this.rowsSignal()
+          .flatMap((r): (string | null)[] => [r.sourceSite, r.destinationSite])
+          .filter((s): s is string => s !== null)
       )
     );
     this.filteredRows = computed((): MaterialHistoryRowType[] => {
@@ -165,8 +165,9 @@ export class MaterialHistory {
 
   protected remove(row: MaterialHistoryRowType): void {
     const origin: string = row.type === 'compra' ? 'Compra externa' : (row.sourceSite ?? '');
+    const destination: string = row.type === 'consumo' ? 'Consumo' : (row.destinationSite ?? '');
     this.confirmationService
-      .confirm(`¿Eliminar el ${row.type === 'compra' ? 'ingreso por compra' : 'movimiento'} de "${row.material}" (${origin} → ${row.destinationSite}, ${row.date})? Las cantidades de inventario se recalcularán automáticamente.`)
+      .confirm(`¿Eliminar el ${row.type === 'compra' ? 'ingreso por compra' : row.type === 'consumo' ? 'registro de consumo' : 'movimiento'} de "${row.material}" (${origin} → ${destination}, ${row.date})? Las cantidades de inventario se recalcularán automáticamente.`)
       .pipe(
         filter((confirmed: boolean): boolean => confirmed),
         switchMap((): Observable<MutationResponseType> =>

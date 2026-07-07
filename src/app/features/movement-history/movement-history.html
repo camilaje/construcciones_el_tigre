@@ -68,6 +68,9 @@
             @if (row.type === 'compra') {
               <span class="movement-history__purchase-badge">Compra</span>
               → {{ row.destinationSite }}
+            } @else if (row.type === 'baja') {
+              {{ row.sourceSite }}
+              <span class="movement-history__writeoff-badge">{{ row.reason ?? 'Baja' }}</span>
             } @else {
               {{ row.sourceSite }} → {{ row.destinationSite }}
             }

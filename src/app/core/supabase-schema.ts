@@ -34,6 +34,8 @@ export enum SUPABASE_RPC_ENUMERATION {
   TRANSFER_MATERIAL = 'transferir_material',
   REGISTER_PURCHASE = 'registrar_compra',
   REGISTER_MATERIAL_PURCHASE = 'registrar_compra_material',
+  REGISTER_WRITEOFF = 'dar_de_baja_herramienta',
+  REGISTER_CONSUMPTION = 'registrar_consumo_material',
   GET_AUTH_EMAIL_BY_USERNAME = 'get_auth_email_by_username'
 }
 

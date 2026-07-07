@@ -212,6 +212,14 @@ src/app/
     register-material-initial/ # "Registrar material en obra" (alta inicial), inserta en inventario_material
     register-material/       # "Registrar movimiento de material" (traslado), usa RPC transferir_material
     material-history/        # "Historial de movimientos de material", lee historial_movimientos_material
+    register-purchase/       # "Registrar compra de herramienta" — ingreso externo sin obra origen,
+                             #  usa RPC registrar_compra_herramienta; navega a /inventory al terminar
+    register-writeoff/       # "Dar de baja herramienta" (daño/pérdida/obsolescencia), solo admin/super_admin.
+                             #  Dropdown de herramienta → dropdown de obra (solo obras con stock > 0).
+                             #  Usa RPC dar_de_baja_herramienta; navega a /inventory al terminar
+    register-consumption/    # "Registrar consumo de material" (todos los roles).
+                             #  Dropdown de material → dropdown de obra (solo obras con stock > 0).
+                             #  Usa RPC registrar_consumo_material; navega a /materials/inventory al terminar
     catalog/                 # CRUD genérico configurable via route data: soporta campos opcionales
                              # hasQuantity (cantidad_total + summary view), hasBodega (toggle es_bodega),
                              # hasObservations (campo libre). Reusado en 4 rutas:
@@ -223,10 +231,12 @@ src/app/
                              # manage-user. super_admin puede crear admins; admins solo crean workers.
   app.routes.ts             # '/login' público; '/' (Shell) protegida con authGuard, con hijos:
                              # '' (Home), 'inventory', 'inventory/:id', 'register-tool',
-                             # 'register-movement', 'movements', 'materials/inventory',
-                             # 'materials/register-initial', 'materials/register',
+                             # 'register-movement', 'register-purchase', 'movements',
+                             # 'materials/inventory', 'materials/register-initial', 'materials/register',
+                             # 'materials/register-purchase', 'materials/register-consumption',
                              # 'materials/history', 'catalogs/tools', 'catalogs/materials',
                              # 'catalogs/sites', 'catalogs/supervisors',
+                             # 'register-writeoff' (roleGuard [admin, super_admin]),
                              # 'admin/users' (roleGuard [admin, super_admin])
 ```
 
@@ -244,16 +254,29 @@ SQL Editor del Dashboard (`supabase.com/dashboard/project/ngiegwgrljveitpwsinf/s
 | `obras` | Catálogo: nombre + `es_bodega` (si es true, el stock ahí se cuenta como "disponible") |
 | `encargados` | Catálogo simple (solo nombre) |
 | `inventario_obra` | Una fila por combinación Herramienta×Obra. `cantidad_inicial` se ingresa una sola vez; `cantidad_actual` se recalcula solo (trigger) |
-| `movimientos` | Historial de traslados de herramientas obra-a-obra |
+| `movimientos` | Historial de movimientos de herramientas. Columna `tipo` (`traslado` / `compra` / `baja`). Para tipo `baja`: `inventario_destino_id` es NULL y `motivo` lleva la razón (`daño` / `pérdida` / `obsolescencia`) |
 | `materiales` | Catálogo: nombre + `cantidad_total` + `observaciones` (campo libre de texto) |
 | `inventario_material` | Una fila por combinación Material×Obra. `cantidad_inicial` se ingresa una sola vez; `cantidad_actual` se recalcula solo (trigger insert + trigger delete + trigger after-insert) |
-| `movimientos_material` | Historial de traslados de materiales obra-a-obra |
+| `movimientos_material` | Historial de movimientos de materiales. Columna `tipo` (`traslado` / `compra` / `consumo`). Para tipo `consumo`: `inventario_destino_id` es NULL |
 | `perfiles_usuario` | Perfil de cada usuario: `user_id` (FK → auth.users), `role` (super_admin/admin/worker), `display_name`, `username` (login identifier, UNIQUE), `created_at` |
 
 **Funciones RPC:**
 - `transferir_herramienta(herramienta_id, obra_origen_id, obra_destino_id, cantidad, ...)` — valida stock en
   origen, crea el registro en destino si no existe, inserta el movimiento; trigger recalcula `cantidad_actual`.
+- `registrar_compra_herramienta(herramienta_id, obra_destino_id, cantidad, ...)` — ingreso externo sin obra
+  origen (compra). Incrementa `cantidad_total` en `herramientas` e inserta movimiento con `tipo = 'compra'`.
+- `dar_de_baja_herramienta(herramienta_id, obra_origen_id, cantidad, motivo, ...)` — solo admin/super_admin.
+  Valida stock disponible, decrece `cantidad_total` en `herramientas` e inserta movimiento con `tipo = 'baja'`
+  y `motivo` (`daño`/`pérdida`/`obsolescencia`). `inventario_destino_id` queda NULL.
 - `transferir_material(material_id, obra_origen_id, obra_destino_id, cantidad, ...)` — ídem para materiales.
+- `registrar_compra_material(material_id, obra_destino_id, cantidad, ...)` — ingreso externo de material.
+  Incrementa `cantidad_total` en `materiales` e inserta movimiento con `tipo = 'compra'`.
+- `registrar_consumo_material(material_id, obra_origen_id, cantidad, ...)` — SECURITY DEFINER (workers pueden
+  usarla). Valida stock, decrece `cantidad_total` en `materiales` e inserta movimiento con `tipo = 'consumo'`.
+  `inventario_destino_id` queda NULL.
+- `recalcular_cantidad_actual_material(inventario_id)` — SECURITY DEFINER. Recalcula `cantidad_actual` desde
+  el historial (`cantidad_inicial + entradas − salidas`). Necesita SECURITY DEFINER porque workers no tienen
+  permiso de UPDATE en `inventario_material` directamente.
 - `auth_role()` — devuelve el rol del usuario actual; lee el claim del JWT primero (rápido), cae a
   `perfiles_usuario` como fallback (primer login tras una migración de roles).
 - `get_auth_email_by_username(p_username)` — SECURITY DEFINER; resuelve el email interno de auth.users a
@@ -267,11 +290,13 @@ SQL Editor del Dashboard (`supabase.com/dashboard/project/ngiegwgrljveitpwsinf/s
 
 **Vistas** (todas con `security_invoker = true` — sin esto quedarían con owner `postgres`, saltándose el RLS):
 - `resumen_por_obra` — agregación Herramienta×Obra con `cantidad_actual`, encargado y último movimiento.
-- `historial_movimientos` — resuelve nombres legibles para la pantalla de historial de herramientas.
+- `historial_movimientos` — resuelve nombres legibles para el historial de herramientas; incluye columna `tipo`
+  (`traslado`/`compra`/`baja`) y `motivo` (solo para bajas).
 - `resumen_herramientas` — por herramienta: `cantidad_total`, `en_obras` (excluye `es_bodega=true`), `disponible`.
 - `resumen_materiales` — igual que la anterior pero para materiales.
 - `resumen_por_obra_material` — agregación Material×Obra con `cantidad_actual`, encargado y último movimiento.
-- `historial_movimientos_material` — resuelve nombres legibles para la pantalla de historial de materiales.
+- `historial_movimientos_material` — resuelve nombres legibles para el historial de materiales; incluye columna
+  `tipo` (`traslado`/`compra`/`consumo`).
 
 **RLS:** políticas granulares por operación y por rol en todas las tablas:
 - Catálogos (`herramientas`, `materiales`, `obras`, `encargados`) y inventarios: todos los autenticados
@@ -290,9 +315,16 @@ SQL Editor del Dashboard (`supabase.com/dashboard/project/ngiegwgrljveitpwsinf/s
 5. `cantidad_inicial` se ingresa una sola vez, al llegar la herramienta/material por primera vez a una obra.
 6. Una obra marcada como `es_bodega = true` es tratada como bodega: su stock cuenta como "disponible" en el resumen de herramientas, no como "en obras".
 7. `cantidad_total` en `herramientas` y `materiales` representa el total físico que tiene la empresa; `disponible = cantidad_total − en_obras`.
-8. Los **workers** solo pueden crear registros (catálogos, altas iniciales, movimientos); no pueden editar ni eliminar nada.
+8. Los **workers** pueden crear registros (catálogos, altas iniciales, movimientos, consumos de materiales);
+   no pueden editar ni eliminar nada, y no pueden dar de baja herramientas.
 9. Los **admins** tienen acceso completo a la app y pueden crear/eliminar usuarios worker.
 10. Solo el **super_admin** puede crear/eliminar cuentas admin. No se pueden crear super_admins desde la app.
+11. Una **baja de herramienta** es una salida sin destino: retira unidades del inventario de una obra y las
+    elimina del total de la empresa (`cantidad_total − cantidad`). Requiere una razón: `daño`, `pérdida` u
+    `obsolescencia`. Solo admin/super_admin pueden registrarla.
+12. Un **consumo de material** es equivalente a la baja pero para materiales: retira stock de una obra y
+    descuenta de `cantidad_total`. Todos los roles pueden registrar consumos (workers incluidos, ya que es
+    una operación habitual en obra).
 
 ### Qué entidades son CRUD completo y cuáles no (decisión deliberada)
 
@@ -303,7 +335,9 @@ SQL Editor del Dashboard (`supabase.com/dashboard/project/ngiegwgrljveitpwsinf/s
 - **Movimientos (`movimientos`, `movimientos_material`)**: creación + eliminación (sin edición). La eliminación
   recalcula automáticamente `cantidad_actual` en los inventarios afectados (trigger AFTER DELETE). Se permite
   borrar para corregir registros erróneos; la cantidad resultante queda siempre consistente con el historial
-  restante. Workers pueden crear movimientos pero no eliminarlos.
+  restante. Workers pueden crear movimientos y consumos pero no eliminarlos. Las bajas de herramienta son
+  movimientos con `tipo = 'baja'` (solo admin/super_admin); los consumos de material son movimientos con
+  `tipo = 'consumo'` (todos los roles).
 
 ## Estado actual (qué está construido)
 
@@ -382,9 +416,11 @@ SQL Editor del Dashboard (`supabase.com/dashboard/project/ngiegwgrljveitpwsinf/s
 - ✅ Errores de formulario/reglas de negocio más visibles: `<app-error-banner>` (ícono + fondo con tinte +
   borde) reemplaza el `<p>` de texto plano en Login, Registrar herramienta, Registrar movimiento y
   Catálogos.
-- ✅ Sidenav refactorizado a grupos colapsables con `mat-accordion` (Inicio | Herramientas | Materiales |
-  Catálogos) — elimina la lista plana de 8 ítems y agrupa los módulos por dominio. El grupo que contiene
-  la ruta activa se expande automáticamente al navegar.
+- ✅ Sidenav refactorizado a grupos colapsables con `mat-accordion` (Inicio | Usuarios | Herramientas |
+  Materiales | Catálogos) — elimina la lista plana de ítems y agrupa los módulos por dominio. El grupo que
+  contiene la ruta activa se expande automáticamente al navegar. "Usuarios" solo visible para admin/super_admin.
+  Los grupos Herramientas y Materiales incluyen ahora los nuevos accesos: "Registrar compra", "Dar de baja"
+  (solo admin/super_admin en Herramientas) y "Registrar consumo" (en Materiales).
 - ✅ Módulo de materiales completo: inventario por obra (`material-inventory/`), registrar movimiento
   (`register-material/`, usa RPC `transferir_material`), historial (`material-history/`). Las tres pantallas
   siguen la misma estructura y convenciones que sus equivalentes de herramientas.
@@ -397,7 +433,24 @@ SQL Editor del Dashboard (`supabase.com/dashboard/project/ngiegwgrljveitpwsinf/s
 - ✅ Alta inicial de materiales en obra (`register-material-initial/`, ruta `/materials/register-initial`) —
   equivalente a "Registrar herramienta en obra" pero para materiales. Inserta directamente en
   `inventario_material` con `cantidad_inicial`; un trigger recalcula `cantidad_actual` al insertar, y otro
-  al modificar/borrar movimientos, garantizando consistencia en todos los casos.
+  al modificar/borrar movimientos, garantizando consistencia en todos los casos. Redirige a
+  `/materials/inventory` tras el submit exitoso.
+- ✅ Registro de compras de herramientas y materiales (`register-purchase/` y `materials/register-purchase/`) —
+  ingreso externo sin obra origen. Usa RPCs `registrar_compra_herramienta` y `registrar_compra_material`;
+  incrementa `cantidad_total` del catálogo y genera movimiento con `tipo = 'compra'`. El historial muestra
+  estos registros con badge "Compra" (azul oscuro) en vez de la flecha origen→destino.
+- ✅ Baja de herramientas dañadas (`register-writeoff/`, ruta `/register-writeoff`, solo admin/super_admin) —
+  retira unidades dañadas/perdidas/obsoletas del inventario de una obra y descuenta de `cantidad_total`.
+  Dropdown herramienta → dropdown obra (filtrado por stock > 0). Usa RPC `dar_de_baja_herramienta`.
+  El historial muestra bajas con badge rojo (texto = motivo: "daño"/"pérdida"/"obsolescencia").
+  Redirige a `/inventory` tras el submit exitoso.
+- ✅ Consumo de materiales (`register-consumption/`, ruta `/materials/register-consumption`, todos los roles) —
+  retira material consumido en obra y descuenta de `cantidad_total`. Dropdown material → dropdown obra
+  (filtrado por stock > 0). Usa RPC `registrar_consumo_material` (SECURITY DEFINER para que workers puedan
+  ejecutarlo). El historial muestra consumos con badge ámbar "Consumo".
+  Redirige a `/materials/inventory` tras el submit exitoso.
+- ✅ Redirect post-submit en todos los formularios: RegisterTool, RegisterMaterialInitial, RegisterPurchase,
+  RegisterWriteoff y RegisterConsumption navegan al inventario correspondiente en vez de resetear el form.
 - ✅ `inventario_material` tiene `cantidad_inicial` (migración 040000, aplicada 2026-06-26) — corrige el bug
   donde el trigger de movimientos sobreescribía `cantidad_actual` a cero al primer traslado, ignorando el
   stock ingresado en el alta inicial. Mismo modelo que `inventario_obra`.
@@ -417,6 +470,29 @@ Usuarios en Supabase Auth (contraseñas no documentadas aquí por seguridad — 
 - **Paula** (`admin`) — username de login: `Paula`
 
 ## Changelog
+
+### 2026-07-05 — Compras, baja de herramientas y consumo de materiales
+
+- **Registro de compras** (`/register-purchase`, `/materials/register-purchase`): ingreso de herramientas y
+  materiales adquiridos externamente sin obra origen. Los RPCs `registrar_compra_herramienta` y
+  `registrar_compra_material` incrementan `cantidad_total` del catálogo e insertan el movimiento con
+  `tipo = 'compra'`. El historial muestra estos registros con un badge "Compra" diferenciado.
+- **Baja de herramientas** (`/register-writeoff`, solo admin/super_admin): nueva pantalla para retirar
+  herramientas dañadas, perdidas u obsoletas. Columna `tipo` extendida a `traslado | compra | baja` en
+  `movimientos`; nueva columna `motivo` (`daño | pérdida | obsolescencia`); `inventario_destino_id` pasa a
+  ser nullable. Trigger `movimientos_after_insert` actualizado para el branch `baja` (solo resta en origen).
+  El historial de movimientos muestra las bajas con un badge rojo cuyo texto es el motivo.
+- **Consumo de materiales** (`/materials/register-consumption`, todos los roles): nueva pantalla para
+  registrar material consumido en obra. Columna `tipo` extendida a `traslado | compra | consumo` en
+  `movimientos_material`. RPC `registrar_consumo_material` con `SECURITY DEFINER` para que workers puedan
+  ejecutarlo sin permiso directo de UPDATE. El historial de materiales muestra consumos con badge ámbar.
+- **Redirect post-submit**: todos los formularios de registro navegan al inventario correspondiente
+  (`/inventory` para herramientas, `/materials/inventory` para materiales) en vez de resetear el form.
+- **Bug corregido — `relation "mo" does not exist`** (migración 20260706000000): las funciones de trigger
+  `recalcular_cantidad_actual_material`, `inventario_material_after_insert` y
+  `movimientos_material_after_insert` en la DB live tenían una definición desincronizada de las migraciones
+  locales (con una referencia a un alias "mo" inexistente). Se recrearon con `CREATE OR REPLACE` y se
+  recalcularon todos los registros de inventario afectados.
 
 ### 2026-06-30 — RBAC, autenticación por username y gestión de usuarios
 

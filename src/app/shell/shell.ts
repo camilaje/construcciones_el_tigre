@@ -110,6 +110,7 @@ export class Shell {
           { path: APP_ROUTE_ENUMERATION.REGISTER_TOOL, label: 'Registrar en obra', icon: 'add_box' },
           { path: APP_ROUTE_ENUMERATION.REGISTER_MOVEMENT, label: 'Registrar movimiento', icon: 'sync_alt' },
           { path: APP_ROUTE_ENUMERATION.REGISTER_PURCHASE, label: 'Registrar compra', icon: 'shopping_cart', adminOnly: true },
+          { path: APP_ROUTE_ENUMERATION.REGISTER_WRITEOFF, label: 'Dar de baja', icon: 'remove_circle_outline', adminOnly: true },
           { path: APP_ROUTE_ENUMERATION.MOVEMENT_HISTORY, label: 'Historial', icon: 'history' }
         ]
       },
@@ -121,6 +122,7 @@ export class Shell {
           { path: APP_ROUTE_ENUMERATION.REGISTER_MATERIAL_INITIAL, label: 'Registrar en obra', icon: 'add_box' },
           { path: APP_ROUTE_ENUMERATION.REGISTER_MATERIAL, label: 'Registrar movimiento', icon: 'sync_alt' },
           { path: APP_ROUTE_ENUMERATION.MATERIALS_REGISTER_PURCHASE, label: 'Registrar compra', icon: 'shopping_cart', adminOnly: true },
+          { path: APP_ROUTE_ENUMERATION.MATERIALS_REGISTER_CONSUMPTION, label: 'Registrar consumo', icon: 'local_fire_department' },
           { path: APP_ROUTE_ENUMERATION.MATERIAL_HISTORY, label: 'Historial', icon: 'history' }
         ]
       },

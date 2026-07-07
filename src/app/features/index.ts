@@ -11,4 +11,6 @@ export * from './register-material-initial';
 export * from './register-material';
 export * from './material-history';
 export * from './register-purchase';
+export * from './register-writeoff';
+export * from './register-consumption';
 export * from './user-management';
