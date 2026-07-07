@@ -263,20 +263,31 @@ SQL Editor del Dashboard (`supabase.com/dashboard/project/ngiegwgrljveitpwsinf/s
 **Funciones RPC:**
 - `transferir_herramienta(herramienta_id, obra_origen_id, obra_destino_id, cantidad, ...)` — valida stock en
   origen, crea el registro en destino si no existe, inserta el movimiento; trigger recalcula `cantidad_actual`.
-- `registrar_compra_herramienta(herramienta_id, obra_destino_id, cantidad, ...)` — ingreso externo sin obra
-  origen (compra). Incrementa `cantidad_total` en `herramientas` e inserta movimiento con `tipo = 'compra'`.
-- `dar_de_baja_herramienta(herramienta_id, obra_origen_id, cantidad, motivo, ...)` — solo admin/super_admin.
-  Valida stock disponible, decrece `cantidad_total` en `herramientas` e inserta movimiento con `tipo = 'baja'`
-  y `motivo` (`daño`/`pérdida`/`obsolescencia`). `inventario_destino_id` queda NULL.
+- `registrar_compra(herramienta_id, obra_destino_id, cantidad, ...)` — solo admin/super_admin (verificado con
+  `auth_role()` dentro del RPC, no solo en el frontend). Ingreso externo sin obra origen (compra). Incrementa
+  `cantidad_total` en `herramientas` e inserta movimiento con `tipo = 'compra'`.
+- `dar_de_baja_herramienta(herramienta_id, obra_origen_id, cantidad, motivo, ...)` — solo admin/super_admin
+  (`auth_role()` dentro del RPC). Valida stock disponible y que `cantidad_total` no quede negativo, decrece
+  `cantidad_total` en `herramientas` e inserta movimiento con `tipo = 'baja'` y `motivo`
+  (`daño`/`pérdida`/`obsolescencia`). `inventario_destino_id` queda NULL.
 - `transferir_material(material_id, obra_origen_id, obra_destino_id, cantidad, ...)` — ídem para materiales.
-- `registrar_compra_material(material_id, obra_destino_id, cantidad, ...)` — ingreso externo de material.
-  Incrementa `cantidad_total` en `materiales` e inserta movimiento con `tipo = 'compra'`.
-- `registrar_consumo_material(material_id, obra_origen_id, cantidad, ...)` — SECURITY DEFINER (workers pueden
-  usarla). Valida stock, decrece `cantidad_total` en `materiales` e inserta movimiento con `tipo = 'consumo'`.
+- `registrar_compra_material(material_id, obra_destino_id, cantidad, ...)` — solo admin/super_admin
+  (`auth_role()` dentro del RPC). Ingreso externo de material. Incrementa `cantidad_total` en `materiales`
+  e inserta movimiento con `tipo = 'compra'`.
+- `registrar_consumo_material(material_id, obra_origen_id, cantidad, ...)` — SECURITY DEFINER, abierta a
+  todos los roles a propósito (workers pueden usarla). Valida stock disponible y que `cantidad_total` no
+  quede negativo, decrece `cantidad_total` en `materiales` e inserta movimiento con `tipo = 'consumo'`.
   `inventario_destino_id` queda NULL.
 - `recalcular_cantidad_actual_material(inventario_id)` — SECURITY DEFINER. Recalcula `cantidad_actual` desde
-  el historial (`cantidad_inicial + entradas − salidas`). Necesita SECURITY DEFINER porque workers no tienen
-  permiso de UPDATE en `inventario_material` directamente.
+  el historial (`cantidad_inicial + entradas − salidas`) y **rechaza el resultado si daría negativo**
+  (lanza excepción amigable en vez de dejar que falle el `CHECK` de la columna). Necesita SECURITY DEFINER
+  porque workers no tienen permiso de UPDATE en `inventario_material` directamente. Su equivalente para
+  herramientas (`recalcular_cantidad_actual`) tiene el mismo guard de negativos y también es SECURITY
+  DEFINER por la misma razón (ver changelog 2026-07-07).
+- `movimientos_after_insert()` — SECURITY DEFINER. Recalcula ambos inventarios afectados y genera
+  `texto_autogenerado`; necesita SECURITY DEFINER porque `movimientos` no tiene política de UPDATE para
+  ningún rol (los movimientos son de solo creación + eliminación por diseño) y ese campo se escribe
+  internamente justo después del INSERT.
 - `auth_role()` — devuelve el rol del usuario actual; lee el claim del JWT primero (rápido), cae a
   `perfiles_usuario` como fallback (primer login tras una migración de roles).
 - `get_auth_email_by_username(p_username)` — SECURITY DEFINER; resuelve el email interno de auth.users a
@@ -464,12 +475,80 @@ SQL Editor del Dashboard (`supabase.com/dashboard/project/ngiegwgrljveitpwsinf/s
   **https://control-de-herramientas-el-tigre.netlify.app**. Verificado end-to-end contra producción: login, datos
   reales de Supabase, navegación profunda con refresh (`/catalogs/tools` recargado en el navegador no da
   404, gracias al redirect SPA del `netlify.toml`), logout.
+- ✅ Reflow mobile de tablas corregido de raíz (`src/styles.scss`) — regla global bajo `@media (max-width:
+  600px)` para `.inventory__table`, `.movement-history__table`, `.material-inventory__table`,
+  `.material-history__table` e `.inventory-detail__table`: fuerza `tbody`/`tr`/`td` a `display: block` y
+  oculta `thead`. Necesario porque los `<tr mat-row>` de `mat-table` se renderizan en el contexto del CDK,
+  no del componente host, así que las reglas SCSS de componente por sí solas no bastaban.
+- ✅ Paneles de "tips" de Registrar compra, Registrar baja y Registrar consumo ampliados con contexto más
+  específico (qué filtra cada dropdown, que la cantidad puede ser parcial, qué significa cada motivo de baja).
+- ✅ Guards contra cantidades negativas: `inventario_material.cantidad_actual` ahora tiene
+  `CHECK (cantidad_actual >= 0)` (herramientas ya lo tenía) y `cantidad_total` lo tiene en ambos catálogos
+  (`herramientas`, `materiales`). Además, `recalcular_cantidad_actual`/`_material` validan el resultado
+  *antes* de escribirlo y lanzan un mensaje claro en vez de un error crudo de constraint — esto bloquea el
+  caso de borrar un movimiento "fuera de orden" (ej. una compra vieja cuyo stock ya se trasladó o consumió
+  después) que antes podía dejar el inventario en negativo sin aviso.
+- ✅ `registrar_compra`, `registrar_compra_material` y `dar_de_baja_herramienta` ahora verifican
+  `auth_role() in ('admin', 'super_admin')` dentro del propio RPC, no solo en el `roleGuard` del frontend —
+  antes, un worker que invocara el RPC directamente (ej. consola del navegador) podía dejar `cantidad_total`
+  desincronizado de `cantidad_actual` porque el `UPDATE` sobre el catálogo fallaba en silencio por RLS
+  mientras el resto de la operación sí se completaba.
 
 Usuarios en Supabase Auth (contraseñas no documentadas aquí por seguridad — quien las necesite las pide directamente):
 - **Juan Camilo** (`super_admin`) — username de login: `Juan Camilo`
 - **Paula** (`admin`) — username de login: `Paula`
 
 ## Changelog
+
+### 2026-07-07 — Guards contra cantidades negativas y refuerzo de permisos server-side
+
+Auditoría del módulo de materiales (ver `docs/` o pedir el análisis de sesión) detectó dos huecos y ambos
+se corrigieron en la misma migración (`20260707000000_negative_quantity_guards_and_admin_rpc_checks.sql`):
+
+- **Cantidades negativas**: `inventario_material.cantidad_actual` no tenía `CHECK (cantidad_actual >= 0)`
+  (a diferencia de `inventario_obra`, que sí lo tenía desde el inicio). Borrar un movimiento antiguo cuyo
+  stock ya se había usado en un movimiento posterior podía dejar el inventario en negativo sin ningún aviso.
+  Se agregó el `CHECK` que faltaba (más `CHECK (cantidad_total >= 0)` en `herramientas` y `materiales`) y un
+  guard previo en `recalcular_cantidad_actual`/`_material` que lanza un mensaje amigable antes de llegar a
+  escribir un valor negativo. Se probó forzando el escenario (compra → traslado que usa ese stock → intento
+  de borrar la compra) y el borrado queda bloqueado con el mensaje esperado.
+- **Permisos de admin solo en frontend**: `registrar_compra`, `registrar_compra_material` y
+  `dar_de_baja_herramienta` dependían únicamente del `roleGuard` de Angular para restringirse a
+  admin/super_admin — nada en la base de datos lo impedía si alguien invocaba el RPC directamente. Se
+  agregó `auth_role() in ('admin', 'super_admin')` al inicio de cada función. `registrar_consumo_material`
+  no cambió — sigue abierta a todos los roles a propósito.
+- **`cantidad_actual` de herramientas no se actualizaba para traslados hechos por workers**
+  (`20260707010000_recalcular_cantidad_actual_security_definer.sql`): `recalcular_cantidad_actual`
+  (herramientas) nunca tuvo `SECURITY DEFINER` — a diferencia de su equivalente de materiales, corregido en
+  julio 5-6. La política `admin update inventario_obra` bloqueaba en silencio el `UPDATE` interno del
+  trigger cuando lo disparaba un worker (ej. un traslado normal desde "Registrar movimiento"), dejando
+  `cantidad_actual` desactualizada hasta que un admin tocara esa misma combinación herramienta+obra. Se
+  agregó `SECURITY DEFINER` (mismo patrón que materiales) y se recalcularon retroactivamente todos los
+  registros de `inventario_obra` por si algún dato ya había quedado desincronizado.
+- **"Último movimiento" apareciendo vacío en Inventario/Historial de herramientas**
+  (`20260707020000_movimientos_texto_autogenerado_security_definer.sql`): la tabla `movimientos` no tiene
+  ninguna política de `UPDATE` desde que se introdujo RLS granular (por diseño — los movimientos son de solo
+  creación + eliminación, nunca edición). Eso bloqueaba también el `UPDATE` interno que
+  `movimientos_after_insert` usa para guardar `texto_autogenerado`, para **cualquier rol, admin incluido**.
+  El arreglo no fue agregar una política de `UPDATE` (eso permitiría editar movimientos libremente,
+  violando la regla de negocio) sino agregar `SECURITY DEFINER` solo al trigger. Se incluyó un backfill que
+  regenera `texto_autogenerado` para los registros que quedaron en `NULL` desde el 30 de junio (con la
+  salvedad de que el backfill usa la `cantidad_actual` de hoy, no la del momento histórico exacto — es un
+  texto informativo, no afecta ningún cálculo de negocio).
+- Los cuatro fixes de esta sección no requirieron cambios de frontend: los mensajes de error nuevos ya se
+  muestran solos vía `<app-error-banner>`, que ya leía `result.error.message` en todas las pantallas de
+  borrado/registro.
+
+### 2026-07-06 — Reflow mobile de tablas y tips de formularios más específicos
+
+- **Fix de raíz para tablas en mobile** (`src/styles.scss`): las reglas SCSS por componente no bastaban
+  porque `mat-table` renderiza `<tr mat-row>` en el contexto del CDK, no del componente host, así que los
+  selectores con `_ngcontent` nunca hacían match. Se agregó una regla global bajo
+  `@media (max-width: 600px)` que fuerza `tbody`/`tr`/`td` a `display: block` y oculta `thead` para las
+  cinco tablas del proyecto (Inventario, Historial e Inventario/Historial de materiales, Detalle).
+- **Tips de formularios ampliados**: Registrar compra, Registrar baja y Registrar consumo pasaron de 3-4
+  bullets genéricos a explicaciones puntuales (qué filtra cada dropdown, que la cantidad puede ser parcial,
+  qué significa cada motivo de baja, cómo revertir un registro).
 
 ### 2026-07-05 — Compras, baja de herramientas y consumo de materiales
 
