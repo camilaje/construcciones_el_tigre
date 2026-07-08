@@ -1,79 +1,72 @@
 <div class="register-tool__page">
-  @if (loadingCatalogs()) {
-    <mat-spinner class="register-tool__spinner" diameter="32" />
-  } @else {
-    <mat-card class="register-tool__card">
-      <mat-card-content>
-        <form
-          class="register-tool__form"
-          [formGroup]="form"
-          (ngSubmit)="submit(formDirective)"
-          #formDirective="ngForm"
-        >
-          <mat-form-field class="register-tool__field" appearance="outline">
-            <mat-label>Herramienta</mat-label>
-            <mat-select formControlName="toolId">
-              @for (tool of tools(); track tool.id) {
-                <mat-option [value]="tool.id">{{ tool.name }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field class="register-tool__field" appearance="outline">
-            <mat-label>Obra</mat-label>
-            <mat-select formControlName="siteId">
-              @for (site of sites(); track site.id) {
-                <mat-option [value]="site.id">{{ site.name }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field class="register-tool__field" appearance="outline">
-            <mat-label>Cantidad inicial</mat-label>
-            <input matInput type="number" formControlName="initialQuantity" min="1" />
-          </mat-form-field>
-
-          <mat-form-field class="register-tool__field" appearance="outline">
-            <mat-label>Encargado</mat-label>
-            <mat-select formControlName="supervisorId">
-              <mat-option [value]="null">Sin encargado</mat-option>
-              @for (supervisor of supervisors(); track supervisor.id) {
-                <mat-option [value]="supervisor.id">{{ supervisor.name }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-
-          <app-error-banner [message]="errorMessage()" />
-
-          <button
-            class="register-tool__submit"
-            mat-flat-button
-            color="primary"
-            type="submit"
-            [disabled]="form.invalid || saving()"
-          >
-            @if (saving()) {
-              <mat-spinner class="register-tool__submit-spinner" diameter="20" />
-            } @else {
-              Registrar
+  <app-loading-overlay [active]="loadingCatalogs() || saving()" />
+  <mat-card class="register-tool__card">
+    <mat-card-content>
+      <form
+        class="register-tool__form"
+        [formGroup]="form"
+        (ngSubmit)="submit(formDirective)"
+        #formDirective="ngForm"
+      >
+        <mat-form-field class="register-tool__field" appearance="outline">
+          <mat-label>Herramienta</mat-label>
+          <mat-select formControlName="toolId">
+            @for (tool of tools(); track tool.id) {
+              <mat-option [value]="tool.id">{{ tool.name }}</mat-option>
             }
-          </button>
-        </form>
-      </mat-card-content>
-    </mat-card>
+          </mat-select>
+        </mat-form-field>
 
-    <mat-card class="register-tool__tips">
-      <mat-card-content>
-        <h2 class="register-tool__tips-title">Antes de registrar</h2>
-        <ul class="register-tool__tips-list">
-          <li>La cantidad inicial se ingresa una sola vez, al llegar la herramienta por primera vez a una obra.</li>
-          <li>
-            Si la herramienta ya tiene inventario en esa obra, usa "Registrar movimiento" para trasladar
-            cantidad hacia aquí en vez de repetir el alta.
-          </li>
-          <li>El encargado se puede asignar después desde "Inventario por Obra" si todavía no lo sabes.</li>
-        </ul>
-      </mat-card-content>
-    </mat-card>
-  }
+        <mat-form-field class="register-tool__field" appearance="outline">
+          <mat-label>Obra</mat-label>
+          <mat-select formControlName="siteId">
+            @for (site of sites(); track site.id) {
+              <mat-option [value]="site.id">{{ site.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="register-tool__field" appearance="outline">
+          <mat-label>Cantidad inicial</mat-label>
+          <input matInput type="number" formControlName="initialQuantity" min="1" />
+        </mat-form-field>
+
+        <mat-form-field class="register-tool__field" appearance="outline">
+          <mat-label>Encargado</mat-label>
+          <mat-select formControlName="supervisorId">
+            <mat-option [value]="null">Sin encargado</mat-option>
+            @for (supervisor of supervisors(); track supervisor.id) {
+              <mat-option [value]="supervisor.id">{{ supervisor.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <app-error-banner [message]="errorMessage()" (dismissed)="clearError()" />
+
+        <button
+          class="register-tool__submit"
+          mat-flat-button
+          color="primary"
+          type="submit"
+          [disabled]="form.invalid || saving()"
+        >
+          Registrar
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="register-tool__tips">
+    <mat-card-content>
+      <h2 class="register-tool__tips-title">Antes de registrar</h2>
+      <ul class="register-tool__tips-list">
+        <li>La cantidad inicial se ingresa una sola vez, al llegar la herramienta por primera vez a una obra.</li>
+        <li>
+          Si la herramienta ya tiene inventario en esa obra, usa "Registrar movimiento" para trasladar
+          cantidad hacia aquí en vez de repetir el alta.
+        </li>
+        <li>El encargado se puede asignar después desde "Inventario por Obra" si todavía no lo sabes.</li>
+      </ul>
+    </mat-card-content>
+  </mat-card>
 </div>

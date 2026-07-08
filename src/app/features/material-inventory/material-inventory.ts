@@ -2,7 +2,6 @@ import { Component, DestroyRef, Signal, WritableSignal, computed, inject, signal
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
@@ -20,6 +19,7 @@ import {
   SUPABASE_VIEW_ENUMERATION,
   SupabaseService
 } from '../../core';
+import { ErrorBanner, LoadingOverlay } from '../../shared';
 
 interface MaterialInventoryRowType {
   inventoryId: string;
@@ -59,11 +59,12 @@ interface StatType {
   imports: [
     ReactiveFormsModule,
     MatTableModule,
-    MatProgressSpinnerModule,
     MatButtonModule,
     MatIconModule,
     MatSelectModule,
-    MatFormFieldModule
+    MatFormFieldModule,
+    LoadingOverlay,
+    ErrorBanner
   ],
   templateUrl: './material-inventory.html',
   styleUrl: './material-inventory.scss'
@@ -167,6 +168,7 @@ export class MaterialInventory {
 
   protected saveSupervisor(row: MaterialInventoryRowType): void {
     const supervisorId: string | null = this.editSupervisorControl.value;
+    this.loadingSignal.set(true);
 
     from(
       this.supabaseService.client
@@ -177,6 +179,7 @@ export class MaterialInventory {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result: MutationResponseType): void => {
         if (result.error) {
+          this.loadingSignal.set(false);
           this.errorMessageSignal.set(result.error.message);
           return;
         }
@@ -192,18 +195,20 @@ export class MaterialInventory {
       .confirm(`¿Eliminar el registro de "${row.material}" en "${row.site}"? Esta acción no se puede deshacer.`)
       .pipe(
         filter((confirmed: boolean): boolean => confirmed),
-        switchMap((): Observable<MutationResponseType> =>
-          from(
+        switchMap((): Observable<MutationResponseType> => {
+          this.loadingSignal.set(true);
+          return from(
             this.supabaseService.client
               .from(SUPABASE_TABLE_ENUMERATION.MATERIAL_INVENTORY)
               .delete()
               .eq('id', row.inventoryId)
-          )
-        ),
+          );
+        }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((result: MutationResponseType): void => {
         if (result.error) {
+          this.loadingSignal.set(false);
           this.errorMessageSignal.set(
             result.error.code === POSTGRES_ERROR_CODE_ENUMERATION.FOREIGN_KEY_VIOLATION
               ? `"${row.material}" en "${row.site}" tiene movimientos asociados. Elimínalos primero desde Historial y luego podrás borrar este registro.`
@@ -256,4 +261,8 @@ export class MaterialInventory {
         this.supervisorsSignal.set(result.data ?? []);
       });
   }
+  protected clearError(): void {
+    this.errorMessageSignal.set(null);
+  }
+
 }

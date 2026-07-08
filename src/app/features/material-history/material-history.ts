@@ -1,7 +1,6 @@
 import { Component, DestroyRef, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatTableModule } from '@angular/material/table';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
@@ -19,6 +18,7 @@ import {
   SUPABASE_VIEW_ENUMERATION,
   SupabaseService
 } from '../../core';
+import { ErrorBanner, LoadingOverlay } from '../../shared';
 
 interface MaterialHistoryRowType {
   id: string;
@@ -51,12 +51,13 @@ interface StatType {
   selector: 'app-material-history',
   imports: [
     MatTableModule,
-    MatProgressSpinnerModule,
     MatButtonModule,
     MatIconModule,
     MatSelectModule,
     MatFormFieldModule,
-    MatInputModule
+    MatInputModule,
+    LoadingOverlay,
+    ErrorBanner
   ],
   templateUrl: './material-history.html',
   styleUrl: './material-history.scss'
@@ -170,18 +171,20 @@ export class MaterialHistory {
       .confirm(`¿Eliminar el ${row.type === 'compra' ? 'ingreso por compra' : row.type === 'consumo' ? 'registro de consumo' : 'movimiento'} de "${row.material}" (${origin} → ${destination}, ${row.date})? Las cantidades de inventario se recalcularán automáticamente.`)
       .pipe(
         filter((confirmed: boolean): boolean => confirmed),
-        switchMap((): Observable<MutationResponseType> =>
-          from(
+        switchMap((): Observable<MutationResponseType> => {
+          this.loadingSignal.set(true);
+          return from(
             this.supabaseService.client
               .from(SUPABASE_TABLE_ENUMERATION.MATERIAL_MOVEMENTS)
               .delete()
               .eq('id', row.id)
-          )
-        ),
+          );
+        }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((result: MutationResponseType): void => {
         if (result.error) {
+          this.loadingSignal.set(false);
           this.errorMessageSignal.set(result.error.message);
           return;
         }
@@ -217,4 +220,8 @@ export class MaterialHistory {
   private uniqueSorted(values: string[]): string[] {
     return Array.from(new Set(values)).sort((a, b): number => a.localeCompare(b));
   }
+  protected clearError(): void {
+    this.errorMessageSignal.set(null);
+  }
+
 }

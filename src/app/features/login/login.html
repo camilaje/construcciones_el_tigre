@@ -1,4 +1,5 @@
 <div class="login">
+  <app-loading-overlay [active]="loading()" />
   <div class="login__row">
     <mat-card class="login__card">
       <mat-card-content class="login__content">
@@ -18,7 +19,7 @@
             <input matInput type="password" formControlName="password" autocomplete="current-password" />
           </mat-form-field>
 
-          <app-error-banner [message]="errorMessage()" />
+          <app-error-banner [message]="errorMessage()" (dismissed)="clearError()" />
 
           <button
             class="login__submit"
@@ -27,11 +28,7 @@
             type="submit"
             [disabled]="form.invalid || loading()"
           >
-            @if (loading()) {
-              <mat-spinner class="login__spinner" diameter="20" />
-            } @else {
-              Iniciar sesión
-            }
+            Iniciar sesión
           </button>
         </form>
       </mat-card-content>

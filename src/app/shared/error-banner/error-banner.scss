@@ -1,20 +1,33 @@
 // The host element itself always exists in the DOM (only its inner content is
 // conditional), so without this it would still occupy a slot in a parent flex
 // `gap` layout even with no message to show. `display: contents` makes the
-// host generate no box of its own.
+// host generate no box of its own. With position:fixed on the inner element
+// the banner is taken out of normal flow anyway, so this also prevents any
+// residual layout gap.
 :host {
   display: contents;
 }
 
 .error-banner {
+  position: fixed;
+  // Sit just below the Material toolbar (standard height 64px / 4rem).
+  // Using 4.5rem gives ~8px breathing room on both desktop and mobile.
+  top: 4.5rem;
+  // Centered with a max width of 42rem (= 21rem from midpoint), but never
+  // closer than 1rem from either edge on narrow screens.
+  left: max(1rem, calc(50% - 21rem));
+  right: max(1rem, calc(50% - 21rem));
+  z-index: 100;
+
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
   border-radius: 0.5rem;
   border: 1px solid var(--mat-sys-error);
-  background-color: rgba(176, 73, 46, 0.08);
+  // Opaque background so underlying content doesn't bleed through.
+  background-color: #fdf1ee;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
 
   &__icon {
     flex: 0 0 auto;
@@ -22,8 +35,14 @@
   }
 
   &__text {
+    flex: 1;
     color: var(--mat-sys-error);
     font-size: 0.875rem;
     line-height: 1.4;
+  }
+
+  &__close {
+    flex: 0 0 auto;
+    color: var(--mat-sys-error);
   }
 }

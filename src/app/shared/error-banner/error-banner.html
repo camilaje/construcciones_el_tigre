@@ -1,6 +1,9 @@
-@if (message()) {
+@if (visible()) {
   <div class="error-banner" role="alert">
     <mat-icon class="error-banner__icon">error</mat-icon>
     <span class="error-banner__text">{{ message() }}</span>
+    <button class="error-banner__close" mat-icon-button type="button" (click)="dismiss()" aria-label="Cerrar">
+      <mat-icon>close</mat-icon>
+    </button>
   </div>
 }

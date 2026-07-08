@@ -1,4 +1,5 @@
 <div class="user-management__page">
+  <app-loading-overlay [active]="loading() || saving()" />
   <div class="user-management__main">
 
     <!-- Formulario de creación -->
@@ -42,13 +43,11 @@
       </button>
     </form>
 
-    <app-error-banner [message]="errorMessage()" />
+    <app-error-banner [message]="errorMessage()" (dismissed)="clearError()" />
 
-    @if (loading()) {
-      <mat-spinner class="user-management__spinner" diameter="32" />
-    } @else if (users().length === 0) {
+    @if (users().length === 0 && !loading()) {
       <p class="user-management__empty">No hay usuarios registrados.</p>
-    } @else {
+    } @else if (!loading()) {
       <div class="user-management__table-wrapper">
         <table class="user-management__table" mat-table [dataSource]="users()">
 

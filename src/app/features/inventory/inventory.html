@@ -1,117 +1,116 @@
 <div class="inventory__page">
-  @if (errorMessage()) {
-    <p class="inventory__error">{{ errorMessage() }}</p>
-  }
+  <app-loading-overlay [active]="loading()" />
+  <app-error-banner [message]="errorMessage()" (dismissed)="clearError()" />
 
-  @if (loading()) {
-    <mat-spinner class="inventory__spinner" diameter="32" />
-  } @else if (rows().length === 0) {
-    <p class="inventory__empty">No hay herramientas registradas todavía.</p>
-  } @else {
-    <div class="inventory__stats-grid">
-      @for (stat of stats(); track stat.label) {
-        <div class="inventory__stat-card">
-          <span class="inventory__stat-value">{{ stat.value }}</span>
-          <span class="inventory__stat-label">{{ stat.label }}</span>
-        </div>
-      }
-    </div>
-
-    <div class="inventory__filters">
-      <mat-form-field class="inventory__filter-field" appearance="outline">
-        <mat-label>Obra</mat-label>
-        <mat-select [value]="siteFilter()" (selectionChange)="onSiteFilterChange($event.value)">
-          <mat-option [value]="null">Todas</mat-option>
-          @for (site of siteOptions(); track site) {
-            <mat-option [value]="site">{{ site }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field class="inventory__filter-field" appearance="outline">
-        <mat-label>Herramienta</mat-label>
-        <mat-select [value]="toolFilter()" (selectionChange)="onToolFilterChange($event.value)">
-          <mat-option [value]="null">Todas</mat-option>
-          @for (tool of toolOptions(); track tool) {
-            <mat-option [value]="tool">{{ tool }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-    </div>
-
-    @if (filteredRows().length === 0) {
-      <p class="inventory__empty">Ningún registro coincide con los filtros.</p>
+  @if (!loading()) {
+    @if (rows().length === 0) {
+      <p class="inventory__empty">No hay herramientas registradas todavía.</p>
     } @else {
-    <div class="inventory__table-wrapper">
-    <table class="inventory__table" mat-table [dataSource]="filteredRows()">
-      <ng-container matColumnDef="site">
-        <th mat-header-cell *matHeaderCellDef>Obra</th>
-        <td mat-cell *matCellDef="let row" data-label="Obra">{{ row.site }}</td>
-      </ng-container>
+      <div class="inventory__stats-grid">
+        @for (stat of stats(); track stat.label) {
+          <div class="inventory__stat-card">
+            <span class="inventory__stat-value">{{ stat.value }}</span>
+            <span class="inventory__stat-label">{{ stat.label }}</span>
+          </div>
+        }
+      </div>
 
-      <ng-container matColumnDef="tool">
-        <th mat-header-cell *matHeaderCellDef>Herramienta</th>
-        <td mat-cell *matCellDef="let row" data-label="Herramienta">{{ row.tool }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="currentQuantity">
-        <th mat-header-cell *matHeaderCellDef>Cantidad</th>
-        <td mat-cell *matCellDef="let row" data-label="Cantidad">{{ row.currentQuantity }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="supervisor">
-        <th mat-header-cell *matHeaderCellDef>Encargado</th>
-        <td mat-cell *matCellDef="let row" data-label="Encargado">
-          @if (editingId() === row.inventoryId) {
-            <mat-form-field class="inventory__supervisor-field" appearance="outline">
-              <mat-select [formControl]="editSupervisorControl" placeholder="Sin encargado">
-                <mat-option [value]="null">Sin encargado</mat-option>
-                @for (supervisor of supervisors(); track supervisor.id) {
-                  <mat-option [value]="supervisor.id">{{ supervisor.name }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          } @else {
-            {{ row.supervisor ?? '—' }}
-          }
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="lastMovement">
-        <th mat-header-cell *matHeaderCellDef>Último movimiento</th>
-        <td mat-cell *matCellDef="let row" data-label="Último movimiento">{{ row.lastMovement ?? '—' }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef>Acciones</th>
-        <td mat-cell *matCellDef="let row" class="inventory__actions-cell" data-label="Acciones">
-          @if (editingId() === row.inventoryId) {
-            <button class="inventory__action" mat-icon-button type="button" (click)="saveSupervisor(row)">
-              <mat-icon>check</mat-icon>
-            </button>
-            <button class="inventory__action" mat-icon-button type="button" (click)="cancelEditSupervisor()">
-              <mat-icon>close</mat-icon>
-            </button>
-          } @else {
-            <a class="inventory__action" mat-icon-button [routerLink]="detailPath(row)">
-              <mat-icon>visibility</mat-icon>
-            </a>
-            @if (canModify()) {
-              <button class="inventory__action" mat-icon-button type="button" (click)="startEditSupervisor(row)">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button class="inventory__action" mat-icon-button type="button" (click)="remove(row)">
-                <mat-icon>delete</mat-icon>
-              </button>
+      <div class="inventory__filters">
+        <mat-form-field class="inventory__filter-field" appearance="outline">
+          <mat-label>Obra</mat-label>
+          <mat-select [value]="siteFilter()" (selectionChange)="onSiteFilterChange($event.value)">
+            <mat-option [value]="null">Todas</mat-option>
+            @for (site of siteOptions(); track site) {
+              <mat-option [value]="site">{{ site }}</mat-option>
             }
-          }
-        </td>
-      </ng-container>
+          </mat-select>
+        </mat-form-field>
 
-      <tr mat-header-row *matHeaderRowDef="columns"></tr>
-      <tr mat-row *matRowDef="let row; columns: columns"></tr>
-    </table>
-    </div>
+        <mat-form-field class="inventory__filter-field" appearance="outline">
+          <mat-label>Herramienta</mat-label>
+          <mat-select [value]="toolFilter()" (selectionChange)="onToolFilterChange($event.value)">
+            <mat-option [value]="null">Todas</mat-option>
+            @for (tool of toolOptions(); track tool) {
+              <mat-option [value]="tool">{{ tool }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      @if (filteredRows().length === 0) {
+        <p class="inventory__empty">Ningún registro coincide con los filtros.</p>
+      } @else {
+      <div class="inventory__table-wrapper">
+      <table class="inventory__table" mat-table [dataSource]="filteredRows()">
+        <ng-container matColumnDef="site">
+          <th mat-header-cell *matHeaderCellDef>Obra</th>
+          <td mat-cell *matCellDef="let row" data-label="Obra">{{ row.site }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="tool">
+          <th mat-header-cell *matHeaderCellDef>Herramienta</th>
+          <td mat-cell *matCellDef="let row" data-label="Herramienta">{{ row.tool }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="currentQuantity">
+          <th mat-header-cell *matHeaderCellDef>Cantidad</th>
+          <td mat-cell *matCellDef="let row" data-label="Cantidad">{{ row.currentQuantity }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="supervisor">
+          <th mat-header-cell *matHeaderCellDef>Encargado</th>
+          <td mat-cell *matCellDef="let row" data-label="Encargado">
+            @if (editingId() === row.inventoryId) {
+              <mat-form-field class="inventory__supervisor-field" appearance="outline">
+                <mat-select [formControl]="editSupervisorControl" placeholder="Sin encargado">
+                  <mat-option [value]="null">Sin encargado</mat-option>
+                  @for (supervisor of supervisors(); track supervisor.id) {
+                    <mat-option [value]="supervisor.id">{{ supervisor.name }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            } @else {
+              {{ row.supervisor ?? '—' }}
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="lastMovement">
+          <th mat-header-cell *matHeaderCellDef>Último movimiento</th>
+          <td mat-cell *matCellDef="let row" data-label="Último movimiento">{{ row.lastMovement ?? '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let row" class="inventory__actions-cell" data-label="Acciones">
+            @if (editingId() === row.inventoryId) {
+              <button class="inventory__action" mat-icon-button type="button" (click)="saveSupervisor(row)">
+                <mat-icon>check</mat-icon>
+              </button>
+              <button class="inventory__action" mat-icon-button type="button" (click)="cancelEditSupervisor()">
+                <mat-icon>close</mat-icon>
+              </button>
+            } @else {
+              <a class="inventory__action" mat-icon-button [routerLink]="detailPath(row)">
+                <mat-icon>visibility</mat-icon>
+              </a>
+              @if (canModify()) {
+                <button class="inventory__action" mat-icon-button type="button" (click)="startEditSupervisor(row)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button class="inventory__action" mat-icon-button type="button" (click)="remove(row)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              }
+            }
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let row; columns: columns"></tr>
+      </table>
+      </div>
+      }
     }
   }
 </div>

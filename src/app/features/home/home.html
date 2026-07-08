@@ -1,9 +1,7 @@
 <div class="home">
-  @if (loading()) {
-    <mat-spinner class="home__spinner" diameter="32" />
-  } @else if (errorMessage()) {
-    <p class="home__error">{{ errorMessage() }}</p>
-  } @else {
+  <app-loading-overlay [active]="loading()" />
+  <app-error-banner [message]="errorMessage()" (dismissed)="clearError()" />
+  @if (!loading()) {
     @for (group of actionGroups; track group.title) {
       <div class="home__action-group">
         <span class="home__action-group-title">{{ group.title }}</span>

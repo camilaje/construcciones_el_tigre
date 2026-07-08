@@ -74,7 +74,8 @@ body {
   .movement-history__table,
   .material-inventory__table,
   .material-history__table,
-  .inventory-detail__table {
+  .inventory-detail__table,
+  .catalog__table {
     display: block !important;
     width: 100% !important;
     min-width: 0 !important;
@@ -101,6 +102,12 @@ body {
       width: 100% !important;
       box-sizing: border-box !important;
       height: auto !important;
+      font-weight: 600 !important;
+    }
+
+    td[mat-cell]::before {
+      font-weight: 400 !important;
+      font-size: 0.75rem !important;
     }
   }
 }

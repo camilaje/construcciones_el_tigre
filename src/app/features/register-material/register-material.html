@@ -1,107 +1,100 @@
 <div class="register-material__page">
-  @if (loadingCatalogs()) {
-    <mat-spinner class="register-material__spinner" diameter="32" />
-  } @else {
-    <mat-card class="register-material__card">
-      <mat-card-content>
-        <form
-          class="register-material__form"
-          [formGroup]="form"
-          (ngSubmit)="submit(formDirective)"
-          #formDirective="ngForm"
-        >
-          <mat-form-field class="register-material__field" appearance="outline">
-            <mat-label>Material</mat-label>
-            <mat-select formControlName="materialId">
-              @for (material of materials(); track material.id) {
-                <mat-option [value]="material.id">{{ material.name }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field class="register-material__field" appearance="outline">
-            <mat-label>Obra de origen</mat-label>
-            <mat-select formControlName="sourceSiteId">
-              @for (site of sites(); track site.id) {
-                <mat-option [value]="site.id">{{ site.name }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field class="register-material__field" appearance="outline">
-            <mat-label>Obra de destino</mat-label>
-            <mat-select formControlName="destinationSiteId">
-              @for (site of sites(); track site.id) {
-                <mat-option [value]="site.id">{{ site.name }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-
-          <app-error-banner [message]="sameSiteErrorMessage()" />
-
-          <mat-form-field class="register-material__field" appearance="outline">
-            <mat-label>Cantidad</mat-label>
-            <input matInput type="number" formControlName="quantity" min="1" />
-          </mat-form-field>
-
-          <mat-form-field class="register-material__field" appearance="outline">
-            <mat-label>Quien entrega</mat-label>
-            <mat-select formControlName="deliveredById">
-              <mat-option [value]="null">Sin especificar</mat-option>
-              @for (supervisor of supervisors(); track supervisor.id) {
-                <mat-option [value]="supervisor.id">{{ supervisor.name }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field class="register-material__field" appearance="outline">
-            <mat-label>Quien recibe</mat-label>
-            <mat-select formControlName="receivedById">
-              <mat-option [value]="null">Sin especificar</mat-option>
-              @for (supervisor of supervisors(); track supervisor.id) {
-                <mat-option [value]="supervisor.id">{{ supervisor.name }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field class="register-material__field" appearance="outline">
-            <mat-label>Fecha</mat-label>
-            <input matInput type="date" formControlName="date" />
-          </mat-form-field>
-
-          <mat-form-field class="register-material__field" appearance="outline">
-            <mat-label>Observaciones</mat-label>
-            <textarea matInput formControlName="notes" rows="2"></textarea>
-          </mat-form-field>
-
-          <app-error-banner [message]="errorMessage()" />
-
-          <button
-            class="register-material__submit"
-            mat-flat-button
-            color="primary"
-            type="submit"
-            [disabled]="form.invalid || saving()"
-          >
-            @if (saving()) {
-              <mat-spinner class="register-material__submit-spinner" diameter="20" />
-            } @else {
-              Registrar traslado
+  <app-loading-overlay [active]="loadingCatalogs() || saving()" />
+  <mat-card class="register-material__card">
+    <mat-card-content>
+      <form
+        class="register-material__form"
+        [formGroup]="form"
+        (ngSubmit)="submit(formDirective)"
+        #formDirective="ngForm"
+      >
+        <mat-form-field class="register-material__field" appearance="outline">
+          <mat-label>Material</mat-label>
+          <mat-select formControlName="materialId">
+            @for (material of materials(); track material.id) {
+              <mat-option [value]="material.id">{{ material.name }}</mat-option>
             }
-          </button>
-        </form>
-      </mat-card-content>
-    </mat-card>
+          </mat-select>
+        </mat-form-field>
 
-    <mat-card class="register-material__tips">
-      <mat-card-content>
-        <h2 class="register-material__tips-title">Antes de registrar</h2>
-        <ul class="register-material__tips-list">
-          <li>El traslado es atómico: resta en la obra de origen y suma en la de destino al mismo tiempo.</li>
-          <li>Si la cantidad supera el stock disponible en la obra de origen, el sistema rechaza el traslado.</li>
-          <li>Quien entrega y quien recibe son opcionales pero ayudan a mantener trazabilidad.</li>
-        </ul>
-      </mat-card-content>
-    </mat-card>
-  }
+        <mat-form-field class="register-material__field" appearance="outline">
+          <mat-label>Obra de origen</mat-label>
+          <mat-select formControlName="sourceSiteId">
+            @for (site of sites(); track site.id) {
+              <mat-option [value]="site.id">{{ site.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="register-material__field" appearance="outline">
+          <mat-label>Obra de destino</mat-label>
+          <mat-select formControlName="destinationSiteId">
+            @for (site of sites(); track site.id) {
+              <mat-option [value]="site.id">{{ site.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <app-error-banner [message]="sameSiteErrorMessage()" />
+
+        <mat-form-field class="register-material__field" appearance="outline">
+          <mat-label>Cantidad</mat-label>
+          <input matInput type="number" formControlName="quantity" min="1" />
+        </mat-form-field>
+
+        <mat-form-field class="register-material__field" appearance="outline">
+          <mat-label>Quien entrega</mat-label>
+          <mat-select formControlName="deliveredById">
+            <mat-option [value]="null">Sin especificar</mat-option>
+            @for (supervisor of supervisors(); track supervisor.id) {
+              <mat-option [value]="supervisor.id">{{ supervisor.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="register-material__field" appearance="outline">
+          <mat-label>Quien recibe</mat-label>
+          <mat-select formControlName="receivedById">
+            <mat-option [value]="null">Sin especificar</mat-option>
+            @for (supervisor of supervisors(); track supervisor.id) {
+              <mat-option [value]="supervisor.id">{{ supervisor.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="register-material__field" appearance="outline">
+          <mat-label>Fecha</mat-label>
+          <input matInput type="date" formControlName="date" />
+        </mat-form-field>
+
+        <mat-form-field class="register-material__field" appearance="outline">
+          <mat-label>Observaciones</mat-label>
+          <textarea matInput formControlName="notes" rows="2"></textarea>
+        </mat-form-field>
+
+        <app-error-banner [message]="errorMessage()" (dismissed)="clearError()" />
+
+        <button
+          class="register-material__submit"
+          mat-flat-button
+          color="primary"
+          type="submit"
+          [disabled]="form.invalid || saving()"
+        >
+          Registrar traslado
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="register-material__tips">
+    <mat-card-content>
+      <h2 class="register-material__tips-title">Antes de registrar</h2>
+      <ul class="register-material__tips-list">
+        <li>El traslado es atómico: resta en la obra de origen y suma en la de destino al mismo tiempo.</li>
+        <li>Si la cantidad supera el stock disponible en la obra de origen, el sistema rechaza el traslado.</li>
+        <li>Quien entrega y quien recibe son opcionales pero ayudan a mantener trazabilidad.</li>
+      </ul>
+    </mat-card-content>
+  </mat-card>
 </div>

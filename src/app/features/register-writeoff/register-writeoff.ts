@@ -13,7 +13,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PostgrestError } from '@supabase/supabase-js';
 import { filter, from, switchMap } from 'rxjs';
 
@@ -24,7 +23,7 @@ import {
   SUPABASE_TABLE_ENUMERATION,
   SupabaseService
 } from '../../core';
-import { ErrorBanner } from '../../shared';
+import { ErrorBanner, LoadingOverlay } from '../../shared';
 
 interface ToolItemType {
   id: string;
@@ -75,7 +74,7 @@ const REASON_OPTIONS: { value: string; label: string }[] = [
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatProgressSpinnerModule,
+    LoadingOverlay,
     ErrorBanner
   ],
   templateUrl: './register-writeoff.html',
@@ -167,7 +166,7 @@ export class RegisterWriteoff {
   }
 
   private today(): string {
-    return new Date().toISOString().slice(0, 10);
+    return new Date().toLocaleDateString('en-CA');
   }
 
   private loadTools(): void {
@@ -217,4 +216,8 @@ export class RegisterWriteoff {
       }
     });
   }
+  protected clearError(): void {
+    this.errorMessageSignal.set(null);
+  }
+
 }

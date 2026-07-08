@@ -1,8 +1,6 @@
 <div class="register-movement__page">
-  @if (loadingCatalogs()) {
-    <mat-spinner class="register-movement__spinner" diameter="32" />
-  } @else {
-    <mat-card class="register-movement__card">
+  <app-loading-overlay [active]="loadingCatalogs() || saving()" />
+  <mat-card class="register-movement__card">
       <mat-card-content>
         <form
           class="register-movement__form"
@@ -74,7 +72,7 @@
             <textarea matInput formControlName="notes" rows="2"></textarea>
           </mat-form-field>
 
-          <app-error-banner [message]="errorMessage()" />
+          <app-error-banner [message]="errorMessage()" (dismissed)="clearError()" />
 
           <button
             class="register-movement__submit"
@@ -83,11 +81,7 @@
             type="submit"
             [disabled]="form.invalid || saving()"
           >
-            @if (saving()) {
-              <mat-spinner class="register-movement__submit-spinner" diameter="20" />
-            } @else {
-              Registrar traslado
-            }
+            Registrar traslado
           </button>
         </form>
       </mat-card-content>
@@ -105,6 +99,5 @@
           <li>Quien entrega y quien recibe son opcionales, pero ayudan a mantener trazabilidad del historial.</li>
         </ul>
       </mat-card-content>
-    </mat-card>
-  }
+  </mat-card>
 </div>

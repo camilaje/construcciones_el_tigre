@@ -7,7 +7,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PostgrestError } from '@supabase/supabase-js';
 import { Observable, combineLatest, from } from 'rxjs';
 
@@ -18,7 +17,7 @@ import {
   SUPABASE_TABLE_ENUMERATION,
   SupabaseService
 } from '../../core';
-import { ErrorBanner } from '../../shared';
+import { ErrorBanner, LoadingOverlay } from '../../shared';
 
 interface CatalogItemType {
   id: string;
@@ -50,7 +49,7 @@ interface RegisterToolFormControlsType {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatProgressSpinnerModule,
+    LoadingOverlay,
     ErrorBanner
   ],
   templateUrl: './register-tool.html',
@@ -182,4 +181,8 @@ export class RegisterTool {
         }
       );
   }
+  protected clearError(): void {
+    this.errorMessageSignal.set(null);
+  }
+
 }

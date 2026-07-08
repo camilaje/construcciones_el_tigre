@@ -6,10 +6,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { APP_ROUTE_ENUMERATION, AuthService } from '../../core';
-import { ErrorBanner } from '../../shared';
+import { ErrorBanner, LoadingOverlay } from '../../shared';
 
 interface LoginFormControlsType {
   username: FormControl<string>;
@@ -24,7 +23,7 @@ interface LoginFormControlsType {
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
-    MatProgressSpinnerModule,
+    LoadingOverlay,
     ErrorBanner
   ],
   templateUrl: './login.html',
@@ -78,4 +77,8 @@ export class Login {
         this.router.navigateByUrl(APP_ROUTE_ENUMERATION.HOME);
       });
   }
+  protected clearError(): void {
+    this.errorMessageSignal.set(null);
+  }
+
 }

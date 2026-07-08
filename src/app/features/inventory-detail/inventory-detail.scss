@@ -7,10 +7,6 @@
     margin: 3rem auto;
   }
 
-  &__error {
-    color: var(--mat-sys-error);
-  }
-
   &__header-card {
     margin-bottom: 1.5rem;
     max-width: 30rem;
@@ -56,6 +52,29 @@
   }
 
   // See inventory.scss for the !important rationale on display/width.
+  &__purchase-badge {
+    display: inline-block;
+    background-color: #c8e6c9;
+    color: #2e7d32;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.75rem;
+    margin-right: 0.25rem;
+  }
+
+  &__writeoff-badge {
+    display: inline-block;
+    background-color: #ffcdd2;
+    color: #c62828;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.75rem;
+    margin-left: 0.25rem;
+    text-transform: capitalize;
+  }
+
   &__table {
     width: 100%;
 
@@ -63,6 +82,7 @@
       display: block !important;
       width: 100% !important;
       min-width: 0 !important;
+      background-color: transparent !important;
 
       tr[mat-header-row] {
         display: none;
@@ -77,7 +97,7 @@
         padding: 0.75rem 1rem;
         border: 1px solid rgba(0, 0, 0, 0.08);
         border-radius: 0.5rem;
-        background-color: var(--mat-sys-surface);
+        background-color: #e4ddd2;
       }
 
       td {
@@ -90,10 +110,12 @@
         padding: 0.5rem 0;
         border-bottom: 1px solid rgba(0, 0, 0, 0.06);
         text-align: right;
+        font-weight: 600;
 
         &::before {
           content: attr(data-label);
-          font-weight: 600;
+          font-weight: 400;
+          font-size: 0.75rem;
           color: #8b8a84;
           text-align: left;
         }

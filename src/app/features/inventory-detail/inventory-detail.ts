@@ -5,11 +5,11 @@ import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PostgrestError } from '@supabase/supabase-js';
 import { Observable, from, map, of, switchMap, tap } from 'rxjs';
 
 import { APP_ROUTE_ENUMERATION, SUPABASE_VIEW_ENUMERATION, SupabaseService } from '../../core';
+import { ErrorBanner, LoadingOverlay } from '../../shared';
 
 interface DetailHeaderType {
   tool: string;
@@ -26,13 +26,15 @@ interface DetailHeaderResponseType {
 interface DetailMovementRowType {
   id: string;
   tool: string;
-  sourceSite: string;
-  destinationSite: string;
+  sourceSite: string | null;
+  destinationSite: string | null;
   quantity: number;
   deliveredBy: string | null;
   receivedBy: string | null;
   date: string;
   notes: string | null;
+  type: 'traslado' | 'compra' | 'baja';
+  reason: string | null;
 }
 
 interface DetailMovementResponseType {
@@ -48,7 +50,7 @@ interface DetailLoadResultType {
 
 @Component({
   selector: 'app-inventory-detail',
-  imports: [RouterLink, MatCardModule, MatTableModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [RouterLink, MatCardModule, MatTableModule, MatButtonModule, MatIconModule, LoadingOverlay, ErrorBanner],
   templateUrl: './inventory-detail.html',
   styleUrl: './inventory-detail.scss'
 })
@@ -121,7 +123,7 @@ export class InventoryDetail {
       this.supabaseService.client
         .from(SUPABASE_VIEW_ENUMERATION.MOVEMENT_HISTORY)
         .select(
-          'id, tool:herramienta, sourceSite:obra_origen, destinationSite:obra_destino, quantity:cantidad, deliveredBy:quien_entrega, receivedBy:quien_recibe, date:fecha, notes:observaciones'
+          'id, type:tipo, tool:herramienta, sourceSite:obra_origen, destinationSite:obra_destino, quantity:cantidad, deliveredBy:quien_entrega, receivedBy:quien_recibe, date:fecha, notes:observaciones, reason:motivo'
         )
         .eq('herramienta', header.tool)
     ).pipe(
@@ -134,4 +136,8 @@ export class InventoryDetail {
       }))
     );
   }
+  protected clearError(): void {
+    this.errorMessageSignal.set(null);
+  }
+
 }

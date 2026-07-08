@@ -96,15 +96,16 @@ real en vez de fórmulas frágiles.
     (`CanActivateFn`) — cada uno con su propio `index.ts`. Excepción: los archivos **dentro** de esas
     subcarpetas se importan entre sí de forma directa (ej. `auth.guard.ts` importa
     `../services/auth.service`, no el barrel), para evitar auto-referenciar el propio barrel.
-11b. **Errores de formulario/reglas de negocio se muestran con `<app-error-banner [message]="..." />`**
+11b. **Errores de formulario/reglas de negocio se muestran con `<app-error-banner [message]="..." (dismissed)="clearError()" />`**
     (`shared/error-banner/`, sibling de `core/` y `features/` para componentes presentacionales reusables
-    entre features) en vez de un `<p>` suelto — ícono + fondo con tinte de error + borde, para que un error
-    real se note de un vistazo y no se confunda con texto normal. El componente usa `input()` (API basada en
-    signals) en vez de la inyección por constructor del resto del proyecto — excepción documentada: Angular
-    exige que sea un inicializador de campo para reconocerlo como input, no se puede asignar en el
-    constructor. El host del componente usa `display: contents` (`error-banner.scss`) porque el elemento
-    siempre existe en el DOM aunque no haya mensaje — sin eso, ocuparía un espacio vacío en el `gap` de
-    formularios flex incluso sin error que mostrar.
+    entre features) en vez de un `<p>` suelto — ícono + fondo con tinte de error + borde, dismissible, para
+    que un error real se note de un vistazo y no se confunda con texto normal. El usuario puede cerrarlo con
+    el botón ✕; el evento `dismissed` llama a `clearError()` en el padre, que hace `errorMessageSignal.set(null)`.
+    El componente usa `input()` y `output()` (API basada en signals) en vez de la inyección por constructor
+    del resto del proyecto — excepción documentada: Angular exige que sean inicializadores de campo para
+    reconocerlos como input/output, no se pueden asignar en el constructor. El host del componente usa
+    `display: contents` (`error-banner.scss`) porque el elemento siempre existe en el DOM aunque no haya
+    mensaje — sin eso, ocuparía un espacio vacío en el `gap` de formularios flex incluso sin error que mostrar.
 
 Patrón de referencia (ver `src/app/core/auth.service.ts` o `src/app/features/login/login.ts`):
 
@@ -187,8 +188,11 @@ src/app/
                              # APP_ROLE_ENUMERATION, POSTGRES_ERROR_CODE_ENUMERATION
     app-route.ts             # enum APP_ROUTE_ENUMERATION con todas las rutas de la app
   shared/
-    error-banner/            # <app-error-banner [message]="...">, ícono + fondo con tinte de error,
-                              # para mensajes de validación/reglas de negocio en cualquier feature
+    error-banner/            # <app-error-banner [message]="..." (dismissed)="clearError()">, ícono + fondo con
+                              # tinte de error + borde, dismissible — para mensajes de validación/negocio en cualquier feature
+    loading-overlay/         # <app-loading-overlay [active]="loading()" />, overlay semi-transparente de
+                              # pantalla completa con spinner centrado (position:fixed, inset:0, z-index:150).
+                              # Usado en los 16 componentes de features durante cargas iniciales y mutaciones
   shell/
     shell.ts                # layout con sidenav tipo hamburguesa (mode="over", oculto por
                              # defecto, botón ☰ en el toolbar) + header dinámico (logo, título por
@@ -482,6 +486,20 @@ SQL Editor del Dashboard (`supabase.com/dashboard/project/ngiegwgrljveitpwsinf/s
   no del componente host, así que las reglas SCSS de componente por sí solas no bastaban.
 - ✅ Paneles de "tips" de Registrar compra, Registrar baja y Registrar consumo ampliados con contexto más
   específico (qué filtra cada dropdown, que la cantidad puede ser parcial, qué significa cada motivo de baja).
+- ✅ **Loading overlay global** (`shared/loading-overlay/`): overlay semi-transparente a pantalla completa
+  con spinner centrado (`position: fixed; inset: 0; z-index: 150`) que se activa durante cualquier petición
+  en los 16 componentes de features — tanto cargas iniciales (`[active]="loading()"`) como mutaciones
+  (borrar, guardar, actualizar). El `change-password-dialog` queda excluido intencionalmente: `position: fixed`
+  dentro del stacking context de un MatDialog quedaría detrás del propio dialog. El barrel `shared/index.ts`
+  reexporta `LoadingOverlay` junto a `ErrorBanner`.
+- ✅ **ErrorBanner dismissible**: `<app-error-banner>` pasó de solo mostrar el error a permitir cerrarlo con
+  un botón ✕. Usa `output()` para emitir `dismissed`; el padre llama `clearError()` → `errorMessageSignal.set(null)`.
+  Se actualizó la convención 11b para documentar el patrón y el binding `(dismissed)`.
+- ✅ **Fix de timezone en campos "Fecha"**: los 5 componentes de registro (herramienta, movimiento, compra,
+  baja, consumo y sus equivalentes de material) usaban `new Date().toISOString().slice(0, 10)` para
+  pre-rellenar la fecha — `toISOString()` convierte a UTC antes de formatear, así que en UTC- la fecha por
+  defecto era el día anterior. Cambiado a `new Date().toLocaleDateString('en-CA')`, que produce el mismo
+  formato `YYYY-MM-DD` pero en hora local del dispositivo.
 - ✅ Guards contra cantidades negativas: `inventario_material.cantidad_actual` ahora tiene
   `CHECK (cantidad_actual >= 0)` (herramientas ya lo tenía) y `cantidad_total` lo tiene en ambos catálogos
   (`herramientas`, `materiales`). Además, `recalcular_cantidad_actual`/`_material` validan el resultado
@@ -499,6 +517,28 @@ Usuarios en Supabase Auth (contraseñas no documentadas aquí por seguridad — 
 - **Paula** (`admin`) — username de login: `Paula`
 
 ## Changelog
+
+### 2026-07-08 — Loading overlay global, ErrorBanner dismissible y fix de timezone
+
+- **Loading overlay global** (`shared/loading-overlay/`): nuevo componente compartido que cubre toda la
+  pantalla con un overlay semi-transparente (`rgba(255,255,255,0.75)`) y un spinner centrado (`mat-spinner
+  diameter=48`) durante cualquier petición activa. `position: fixed; inset: 0; z-index: 150` — visible por
+  encima de todo el contenido y por debajo de los diálogos de Material (z-index ~1000). Integrado en los 16
+  componentes de features tanto para cargas iniciales (`[active]="loading()"`) como para mutaciones (borrar,
+  guardar, actualizar): en los `switchMap` de confirmaciones destructivas se agrega
+  `this.loadingSignal.set(true)` antes de lanzar la petición para que el overlay aparezca inmediatamente al
+  confirmar. El `change-password-dialog` queda excluido intencionalmente. El `:host` del componente usa
+  `display: contents` para no generar caja propia en el flujo del DOM.
+- **ErrorBanner dismissible**: `<app-error-banner>` amplió su API con `output<void>()` para emitir el evento
+  `dismissed`. El binding en todos los templates pasó de `[message]="errorMessage()"` a
+  `[message]="errorMessage()" (dismissed)="clearError()"`. Cada componente implementa `clearError()` que
+  hace `errorMessageSignal.set(null)`. Convención 11b actualizada para documentar el patrón completo.
+- **Fix de timezone en campos "Fecha"**: `new Date().toISOString().slice(0, 10)` reemplazado por
+  `new Date().toLocaleDateString('en-CA')` en todos los componentes de registro (register-tool,
+  register-movement, register-purchase, register-writeoff, register-consumption y sus equivalentes de
+  material). `toISOString()` convierte a UTC antes de formatear, lo que hacía que en zonas UTC- la fecha por
+  defecto fuera el día anterior; `en-CA` produce `YYYY-MM-DD` en hora local del dispositivo sin cambio de
+  zona horaria.
 
 ### 2026-07-07 — Guards contra cantidades negativas y refuerzo de permisos server-side
 

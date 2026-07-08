@@ -92,4 +92,8 @@ export class ChangePasswordDialog {
         this.dialogRef.close();
       });
   }
+  protected clearError(): void {
+    this.errorMessageSignal.set(null);
+  }
+
 }

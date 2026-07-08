@@ -8,7 +8,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PostgrestError } from '@supabase/supabase-js';
 import { Observable, filter, from, switchMap } from 'rxjs';
@@ -23,7 +22,7 @@ import {
   SUPABASE_VIEW_ENUMERATION,
   SupabaseService
 } from '../../core';
-import { ErrorBanner } from '../../shared';
+import { ErrorBanner, LoadingOverlay } from '../../shared';
 
 interface CatalogRouteDataType {
   table: SUPABASE_TABLE_ENUMERATION;
@@ -68,8 +67,8 @@ interface NameFormControlsType {
     MatInputModule,
     MatTableModule,
     MatIconModule,
-    MatProgressSpinnerModule,
     MatTooltipModule,
+    LoadingOverlay,
     ErrorBanner
   ],
   templateUrl: './catalog.html',
@@ -232,10 +231,13 @@ export class Catalog {
       payload['observaciones'] = this.editObservationsControl.value.trim() || null;
     }
 
+    this.loadingSignal.set(true);
+    this.errorMessageSignal.set(null);
     from(this.supabaseService.client.from(this.table).update(payload).eq('id', item.id))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result: MutationResponseType): void => {
         if (result.error) {
+          this.loadingSignal.set(false);
           this.errorMessageSignal.set(this.friendlyError(result.error, name));
           return;
         }
@@ -248,6 +250,7 @@ export class Catalog {
 
   protected toggleBodega(item: CatalogItemType): void {
     this.togglingBodegaIdSignal.set(item.id);
+    this.loadingSignal.set(true);
 
     from(
       this.supabaseService.client
@@ -260,6 +263,7 @@ export class Catalog {
         this.togglingBodegaIdSignal.set(null);
 
         if (result.error) {
+          this.loadingSignal.set(false);
           this.errorMessageSignal.set(result.error.message);
           return;
         }
@@ -273,13 +277,15 @@ export class Catalog {
       .confirm(`¿Eliminar "${item.name}"? Esta acción no se puede deshacer.`)
       .pipe(
         filter((confirmed: boolean): boolean => confirmed),
-        switchMap((): Observable<MutationResponseType> =>
-          from(this.supabaseService.client.from(this.table).delete().eq('id', item.id))
-        ),
+        switchMap((): Observable<MutationResponseType> => {
+          this.loadingSignal.set(true);
+          return from(this.supabaseService.client.from(this.table).delete().eq('id', item.id));
+        }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((result: MutationResponseType): void => {
         if (result.error) {
+          this.loadingSignal.set(false);
           this.errorMessageSignal.set(this.friendlyError(result.error, item.name));
           return;
         }
@@ -332,4 +338,8 @@ export class Catalog {
       this.itemsSignal.set(result.data ?? []);
     });
   }
+  protected clearError(): void {
+    this.errorMessageSignal.set(null);
+  }
+
 }

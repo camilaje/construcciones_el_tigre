@@ -3,7 +3,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PostgrestError } from '@supabase/supabase-js';
 import { Observable, combineLatest, from } from 'rxjs';
 
@@ -13,6 +12,7 @@ import {
   SUPABASE_VIEW_ENUMERATION,
   SupabaseService
 } from '../../core';
+import { ErrorBanner, LoadingOverlay } from '../../shared';
 
 interface CountResponseType {
   count: number | null;
@@ -41,7 +41,7 @@ interface ActionGroupType {
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, MatCardModule, MatButtonModule, MatProgressSpinnerModule],
+  imports: [RouterLink, MatCardModule, MatButtonModule, LoadingOverlay, ErrorBanner],
   templateUrl: './home.html',
   styleUrl: './home.scss'
 })
@@ -159,4 +159,8 @@ export class Home {
         }
       );
   }
+  protected clearError(): void {
+    this.errorMessageSignal.set(null);
+  }
+
 }

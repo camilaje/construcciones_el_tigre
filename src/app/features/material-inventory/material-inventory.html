@@ -1,11 +1,9 @@
 <div class="material-inventory__page">
-  @if (errorMessage()) {
-    <p class="material-inventory__error">{{ errorMessage() }}</p>
-  }
+  <app-loading-overlay [active]="loading()" />
+  <app-error-banner [message]="errorMessage()" (dismissed)="clearError()" />
 
-  @if (loading()) {
-    <mat-spinner class="material-inventory__spinner" diameter="32" />
-  } @else if (rows().length === 0) {
+  @if (!loading()) {
+    @if (rows().length === 0) {
     <p class="material-inventory__empty">No hay materiales en inventario todavía.</p>
   } @else {
     <div class="material-inventory__stats-grid">
@@ -110,4 +108,5 @@
       </div>
     }
   }
+}
 </div>

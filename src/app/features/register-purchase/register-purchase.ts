@@ -13,7 +13,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PostgrestError } from '@supabase/supabase-js';
 import { Observable, combineLatest, from } from 'rxjs';
 
@@ -24,7 +23,7 @@ import {
   SUPABASE_TABLE_ENUMERATION,
   SupabaseService
 } from '../../core';
-import { ErrorBanner } from '../../shared';
+import { ErrorBanner, LoadingOverlay } from '../../shared';
 
 interface CatalogItemType {
   id: string;
@@ -64,7 +63,7 @@ interface RouteDataType {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatProgressSpinnerModule,
+    LoadingOverlay,
     ErrorBanner
   ],
   templateUrl: './register-purchase.html',
@@ -160,7 +159,7 @@ export class RegisterPurchase {
   }
 
   private today(): string {
-    return new Date().toISOString().slice(0, 10);
+    return new Date().toLocaleDateString('en-CA');
   }
 
   private loadCatalogs(): void {
@@ -191,4 +190,8 @@ export class RegisterPurchase {
         this.sitesSignal.set(sites.data ?? []);
       });
   }
+  protected clearError(): void {
+    this.errorMessageSignal.set(null);
+  }
+
 }

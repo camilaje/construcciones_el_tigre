@@ -3,10 +3,6 @@
     margin: 3rem auto;
   }
 
-  &__error {
-    color: var(--mat-sys-error);
-  }
-
   &__stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(13.75rem, 1fr));

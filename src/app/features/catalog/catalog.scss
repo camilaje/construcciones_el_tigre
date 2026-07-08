@@ -54,10 +54,70 @@
     &--wide {
       max-width: 52rem;
     }
+
+    @media (max-width: 600px) {
+      max-width: 100%;
+      overflow: visible;
+      border: none;
+    }
   }
 
   &__table {
     width: 100%;
+
+    @media (max-width: 600px) {
+      display: block !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      background-color: transparent !important;
+
+      tr[mat-header-row] {
+        display: none;
+      }
+
+      tr {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box;
+        height: auto !important;
+        margin-bottom: 1rem;
+        padding: 0.75rem 1rem;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 0.5rem;
+        background-color: #e4ddd2;
+      }
+
+      td {
+        display: flex !important;
+        width: 100% !important;
+        height: auto !important;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        text-align: right;
+        box-sizing: border-box;
+        font-weight: 600;
+
+        &::before {
+          content: attr(data-label);
+          font-weight: 400;
+          font-size: 0.75rem;
+          color: #8b8a84;
+          text-align: left;
+          flex-shrink: 0;
+        }
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        &:not(:has(*)) {
+          display: none !important;
+        }
+      }
+    }
   }
 
   &__name-block {
@@ -143,6 +203,18 @@
 
   &__action {
     margin-right: 0.25rem;
+  }
+
+  &__actions-cell {
+    white-space: nowrap;
+
+    @media (max-width: 600px) {
+      justify-content: flex-end !important;
+
+      &::before {
+        display: none;
+      }
+    }
   }
 
   &__tips {

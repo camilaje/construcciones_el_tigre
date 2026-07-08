@@ -8,7 +8,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SlicePipe } from '@angular/common';
 import { PostgrestError } from '@supabase/supabase-js';
 import { Observable, filter, from, switchMap } from 'rxjs';
@@ -22,7 +21,7 @@ import {
   SUPABASE_TABLE_ENUMERATION,
   SupabaseService
 } from '../../core';
-import { ErrorBanner } from '../../shared';
+import { ErrorBanner, LoadingOverlay } from '../../shared';
 
 interface UserProfileType {
   userId: string;
@@ -65,7 +64,7 @@ const ROLE_LABELS: Record<string, string> = {
     MatSelectModule,
     MatTableModule,
     MatIconModule,
-    MatProgressSpinnerModule,
+    LoadingOverlay,
     ErrorBanner
   ],
   templateUrl: './user-management.html',
@@ -162,17 +161,19 @@ export class UserManagement {
       .confirm(`¿Eliminar la cuenta de "${label}"? Esta acción no se puede deshacer.`)
       .pipe(
         filter((confirmed: boolean): boolean => confirmed),
-        switchMap((): Observable<EdgeFunctionResultType> =>
-          from(
+        switchMap((): Observable<EdgeFunctionResultType> => {
+          this.loadingSignal.set(true);
+          return from(
             this.supabaseService.client.functions.invoke(SUPABASE_EDGE_FUNCTION_ENUMERATION.MANAGE_USER, {
               body: { action: 'delete', userId: user.userId }
             })
-          )
-        ),
+          );
+        }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((result: EdgeFunctionResultType): void => {
         if (result.error) {
+          this.loadingSignal.set(false);
           this.errorMessageSignal.set(result.error.message);
           return;
         }
@@ -210,4 +211,8 @@ export class UserManagement {
         this.usersSignal.set(result.data ?? []);
       });
   }
+  protected clearError(): void {
+    this.errorMessageSignal.set(null);
+  }
+
 }

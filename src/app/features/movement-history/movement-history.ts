@@ -1,7 +1,6 @@
 import { Component, DestroyRef, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatTableModule } from '@angular/material/table';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
@@ -19,6 +18,7 @@ import {
   SUPABASE_VIEW_ENUMERATION,
   SupabaseService
 } from '../../core';
+import { ErrorBanner, LoadingOverlay } from '../../shared';
 
 interface MovementHistoryRowType {
   id: string;
@@ -52,12 +52,13 @@ interface MovementHistoryStatType {
   selector: 'app-movement-history',
   imports: [
     MatTableModule,
-    MatProgressSpinnerModule,
     MatButtonModule,
     MatIconModule,
     MatSelectModule,
     MatFormFieldModule,
-    MatInputModule
+    MatInputModule,
+    LoadingOverlay,
+    ErrorBanner
   ],
   templateUrl: './movement-history.html',
   styleUrl: './movement-history.scss'
@@ -175,15 +176,17 @@ export class MovementHistory {
       .confirm(`¿Eliminar el ${row.type === 'compra' ? 'ingreso por compra' : row.type === 'baja' ? 'registro de baja' : 'movimiento'} de "${row.tool}" (${origin} → ${destination}, ${row.date})? Las cantidades de inventario se recalcularán automáticamente.`)
       .pipe(
         filter((confirmed: boolean): boolean => confirmed),
-        switchMap((): Observable<MutationResponseType> =>
-          from(
+        switchMap((): Observable<MutationResponseType> => {
+          this.loadingSignal.set(true);
+          return from(
             this.supabaseService.client.from(SUPABASE_TABLE_ENUMERATION.MOVEMENTS).delete().eq('id', row.id)
-          )
-        ),
+          );
+        }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((result: MutationResponseType): void => {
         if (result.error) {
+          this.loadingSignal.set(false);
           this.errorMessageSignal.set(result.error.message);
           return;
         }
@@ -219,4 +222,8 @@ export class MovementHistory {
   private uniqueSorted(values: string[]): string[] {
     return Array.from(new Set(values)).sort((a: string, b: string): number => a.localeCompare(b));
   }
+  protected clearError(): void {
+    this.errorMessageSignal.set(null);
+  }
+
 }

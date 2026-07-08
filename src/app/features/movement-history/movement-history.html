@@ -1,115 +1,116 @@
 <div class="movement-history__page">
-  @if (loading()) {
-    <mat-spinner class="movement-history__spinner" diameter="32" />
-  } @else if (errorMessage()) {
-    <p class="movement-history__error">{{ errorMessage() }}</p>
-  } @else if (rows().length === 0) {
-    <p class="movement-history__empty">No hay movimientos registrados todavía.</p>
-  } @else {
-    <div class="movement-history__stats-grid">
-      @for (stat of stats(); track stat.label) {
-        <div class="movement-history__stat-card">
-          <span class="movement-history__stat-value">{{ stat.value }}</span>
-          <span class="movement-history__stat-label">{{ stat.label }}</span>
+  <app-loading-overlay [active]="loading()" />
+  <app-error-banner [message]="errorMessage()" (dismissed)="clearError()" />
+
+  @if (!loading()) {
+    @if (rows().length === 0) {
+      <p class="movement-history__empty">No hay movimientos registrados todavía.</p>
+    } @else {
+      <div class="movement-history__stats-grid">
+        @for (stat of stats(); track stat.label) {
+          <div class="movement-history__stat-card">
+            <span class="movement-history__stat-value">{{ stat.value }}</span>
+            <span class="movement-history__stat-label">{{ stat.label }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="movement-history__filters">
+        <mat-form-field class="movement-history__filter-field" appearance="outline">
+          <mat-label>Herramienta</mat-label>
+          <mat-select [value]="toolFilter()" (selectionChange)="onToolFilterChange($event.value)">
+            <mat-option [value]="null">Todas</mat-option>
+            @for (tool of toolOptions(); track tool) {
+              <mat-option [value]="tool">{{ tool }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="movement-history__filter-field" appearance="outline">
+          <mat-label>Obra</mat-label>
+          <mat-select [value]="siteFilter()" (selectionChange)="onSiteFilterChange($event.value)">
+            <mat-option [value]="null">Todas</mat-option>
+            @for (site of siteOptions(); track site) {
+              <mat-option [value]="site">{{ site }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="movement-history__filter-field" appearance="outline">
+          <mat-label>Desde</mat-label>
+          <input matInput type="date" (change)="onDateFromFilterChange($any($event.target).value)" />
+        </mat-form-field>
+
+        <mat-form-field class="movement-history__filter-field" appearance="outline">
+          <mat-label>Hasta</mat-label>
+          <input matInput type="date" (change)="onDateToFilterChange($any($event.target).value)" />
+        </mat-form-field>
+      </div>
+
+      @if (filteredRows().length === 0) {
+        <p class="movement-history__empty">Ningún movimiento coincide con los filtros.</p>
+      } @else {
+        <div class="movement-history__table-wrapper">
+        <table class="movement-history__table" mat-table [dataSource]="filteredRows()">
+          <ng-container matColumnDef="date">
+            <th mat-header-cell *matHeaderCellDef>Fecha</th>
+            <td mat-cell *matCellDef="let row" data-label="Fecha">{{ row.date }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="tool">
+            <th mat-header-cell *matHeaderCellDef>Herramienta</th>
+            <td mat-cell *matCellDef="let row" data-label="Herramienta">{{ row.tool }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="route">
+            <th mat-header-cell *matHeaderCellDef>Movimiento</th>
+            <td mat-cell *matCellDef="let row" data-label="Movimiento">
+              @if (row.type === 'compra') {
+                <span class="movement-history__purchase-badge">Compra</span>
+                → {{ row.destinationSite }}
+              } @else if (row.type === 'baja') {
+                {{ row.sourceSite }}
+                <span class="movement-history__writeoff-badge">{{ row.reason ?? 'Baja' }}</span>
+              } @else {
+                {{ row.sourceSite }} → {{ row.destinationSite }}
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="quantity">
+            <th mat-header-cell *matHeaderCellDef>Cantidad</th>
+            <td mat-cell *matCellDef="let row" data-label="Cantidad">{{ row.quantity }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="deliveredBy">
+            <th mat-header-cell *matHeaderCellDef>Quien entrega</th>
+            <td mat-cell *matCellDef="let row" data-label="Quien entrega">{{ row.deliveredBy ?? '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="receivedBy">
+            <th mat-header-cell *matHeaderCellDef>Quien recibe</th>
+            <td mat-cell *matCellDef="let row" data-label="Quien recibe">{{ row.receivedBy ?? '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="notes">
+            <th mat-header-cell *matHeaderCellDef>Observaciones</th>
+            <td mat-cell *matCellDef="let row" data-label="Observaciones">{{ row.notes ?? '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let row" class="movement-history__actions-cell">
+              <button mat-icon-button color="warn" (click)="remove(row)" aria-label="Eliminar movimiento">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columns()"></tr>
+          <tr mat-row *matRowDef="let row; columns: columns()"></tr>
+        </table>
         </div>
       }
-    </div>
-
-    <div class="movement-history__filters">
-      <mat-form-field class="movement-history__filter-field" appearance="outline">
-        <mat-label>Herramienta</mat-label>
-        <mat-select [value]="toolFilter()" (selectionChange)="onToolFilterChange($event.value)">
-          <mat-option [value]="null">Todas</mat-option>
-          @for (tool of toolOptions(); track tool) {
-            <mat-option [value]="tool">{{ tool }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field class="movement-history__filter-field" appearance="outline">
-        <mat-label>Obra</mat-label>
-        <mat-select [value]="siteFilter()" (selectionChange)="onSiteFilterChange($event.value)">
-          <mat-option [value]="null">Todas</mat-option>
-          @for (site of siteOptions(); track site) {
-            <mat-option [value]="site">{{ site }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field class="movement-history__filter-field" appearance="outline">
-        <mat-label>Desde</mat-label>
-        <input matInput type="date" (change)="onDateFromFilterChange($any($event.target).value)" />
-      </mat-form-field>
-
-      <mat-form-field class="movement-history__filter-field" appearance="outline">
-        <mat-label>Hasta</mat-label>
-        <input matInput type="date" (change)="onDateToFilterChange($any($event.target).value)" />
-      </mat-form-field>
-    </div>
-
-    @if (filteredRows().length === 0) {
-      <p class="movement-history__empty">Ningún movimiento coincide con los filtros.</p>
-    } @else {
-      <div class="movement-history__table-wrapper">
-      <table class="movement-history__table" mat-table [dataSource]="filteredRows()">
-        <ng-container matColumnDef="date">
-          <th mat-header-cell *matHeaderCellDef>Fecha</th>
-          <td mat-cell *matCellDef="let row" data-label="Fecha">{{ row.date }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="tool">
-          <th mat-header-cell *matHeaderCellDef>Herramienta</th>
-          <td mat-cell *matCellDef="let row" data-label="Herramienta">{{ row.tool }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="route">
-          <th mat-header-cell *matHeaderCellDef>Movimiento</th>
-          <td mat-cell *matCellDef="let row" data-label="Movimiento">
-            @if (row.type === 'compra') {
-              <span class="movement-history__purchase-badge">Compra</span>
-              → {{ row.destinationSite }}
-            } @else if (row.type === 'baja') {
-              {{ row.sourceSite }}
-              <span class="movement-history__writeoff-badge">{{ row.reason ?? 'Baja' }}</span>
-            } @else {
-              {{ row.sourceSite }} → {{ row.destinationSite }}
-            }
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="quantity">
-          <th mat-header-cell *matHeaderCellDef>Cantidad</th>
-          <td mat-cell *matCellDef="let row" data-label="Cantidad">{{ row.quantity }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="deliveredBy">
-          <th mat-header-cell *matHeaderCellDef>Quien entrega</th>
-          <td mat-cell *matCellDef="let row" data-label="Quien entrega">{{ row.deliveredBy ?? '—' }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="receivedBy">
-          <th mat-header-cell *matHeaderCellDef>Quien recibe</th>
-          <td mat-cell *matCellDef="let row" data-label="Quien recibe">{{ row.receivedBy ?? '—' }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="notes">
-          <th mat-header-cell *matHeaderCellDef>Observaciones</th>
-          <td mat-cell *matCellDef="let row" data-label="Observaciones">{{ row.notes ?? '—' }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef></th>
-          <td mat-cell *matCellDef="let row" class="movement-history__actions-cell">
-            <button mat-icon-button color="warn" (click)="remove(row)" aria-label="Eliminar movimiento">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="columns()"></tr>
-        <tr mat-row *matRowDef="let row; columns: columns()"></tr>
-      </table>
-      </div>
     }
   }
 </div>
